@@ -12,8 +12,10 @@ export function ItemsProvider({ children }) {
     ))
   }
 
+  const resetItems = () => setItems(initialItems)
+
   return (
-    <ItemsContext.Provider value={{ items, updateItemStatus }}>
+    <ItemsContext.Provider value={{ items, updateItemStatus, resetItems }}>
       {children}
     </ItemsContext.Provider>
   )

@@ -12,8 +12,13 @@ export function PhaseProvider({ children }) {
     localStorage.setItem('roadsync_phase', p)
   }
 
+  const resetPhase = () => {
+    setPhaseState('Carga')
+    localStorage.setItem('roadsync_phase', 'Carga')
+  }
+
   return (
-    <PhaseContext.Provider value={{ phase, setPhase }}>
+    <PhaseContext.Provider value={{ phase, setPhase, resetPhase }}>
       {children}
     </PhaseContext.Provider>
   )

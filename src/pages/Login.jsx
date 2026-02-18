@@ -177,14 +177,6 @@ export default function Login() {
                 key={role.id}
                 style={styles.roleBtn}
                 onClick={() => setSelectedRole(role.id)}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = 'var(--surface-hover)'
-                  e.currentTarget.style.borderColor = 'var(--accent-red)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = 'var(--surface)'
-                  e.currentTarget.style.borderColor = 'var(--border)'
-                }}
               >
                 <div style={styles.iconWrap}>
                   <Icon size={22} color="var(--accent-red)" />
@@ -209,14 +201,6 @@ export default function Login() {
               key={user.id}
               style={styles.userBtn}
               onClick={() => handleSelectUser(user.id)}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'var(--surface-hover)'
-                e.currentTarget.style.borderColor = 'var(--accent-red)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'var(--surface)'
-                e.currentTarget.style.borderColor = 'var(--border)'
-              }}
             >
               <div style={styles.avatar}>{user.avatar}</div>
               <div style={{ textAlign: 'left' }}>

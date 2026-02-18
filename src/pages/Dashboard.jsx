@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MapPin, Calendar, MessageSquare, AlertTriangle } from 'lucide-react'
+import { MapPin, Calendar, MessageSquare, AlertTriangle, RotateCcw } from 'lucide-react'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
 import ProgressBar from '../components/ProgressBar'
@@ -376,11 +376,27 @@ function DeptDashboard({ dept }) {
 
 export default function Dashboard() {
   const { currentUser } = useAuth()
+  const { resetItems } = useItems()
+  const { resetPhase } = usePhase()
+  const [confirmReset, setConfirmReset] = useState(false)
   const isDeptLead = currentUser?.role === 'dept-lead'
+
+  const handleReset = () => {
+    resetItems()
+    resetPhase()
+    setConfirmReset(false)
+  }
 
   return (
     <>
-      <TopBar title="RoadSync" />
+      <TopBar
+        title="RoadSync"
+        actions={
+          <button onClick={() => setConfirmReset(true)}>
+            <RotateCcw size={18} color="var(--text-muted)" />
+          </button>
+        }
+      />
       <div className="page">
         {isDeptLead ? (
           <DeptDashboard dept={currentUser.dept} />
@@ -388,6 +404,25 @@ export default function Dashboard() {
           <GlobalDashboard />
         )}
       </div>
+
+      {confirmReset && (
+        <div style={styles.overlay} onClick={() => setConfirmReset(false)}>
+          <div style={styles.modal} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalIcon}>
+              <RotateCcw size={22} color="var(--accent-yellow)" />
+            </div>
+            <div style={styles.modalTitle}>Resetear demo</div>
+            <div style={styles.modalBody}>
+              Todos los ítems vuelven a su estado inicial y la fase cambia a Carga.
+            </div>
+            <div style={styles.modalActions}>
+              <button style={styles.btnCancel} onClick={() => setConfirmReset(false)}>Cancelar</button>
+              <button style={styles.btnConfirm} onClick={handleReset}>Resetear</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <BottomNav />
     </>
   )
