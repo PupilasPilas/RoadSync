@@ -5,7 +5,7 @@ import BottomNav from '../components/Layout/BottomNav'
 import StatusBadge from '../components/StatusBadge'
 import { useAuth } from '../context/AuthContext'
 import { useItems } from '../context/ItemsContext'
-import { deptNames, deptColors, movementHistory, users } from '../data/mockData'
+import { deptNames, deptColors, users } from '../data/mockData'
 
 const getUserName = (userId) => {
   const user = users.find(u => u.id === userId)
@@ -150,7 +150,7 @@ function QRCode() {
 export default function ItemDetail() {
   const { id } = useParams()
   const { currentUser } = useAuth()
-  const { items } = useItems()
+  const { items, itemHistory } = useItems()
   const item = items.find(i => i.id === id)
   const role = currentUser?.role
 
@@ -168,11 +168,7 @@ export default function ItemDetail() {
 
   const canEdit = role === 'admin' || (role === 'dept-lead' && item.dept === currentUser.dept)
 
-  const history = movementHistory[item.id] || [
-    { action: 'Descargado', userId: 'juan', time: '14:30' },
-    { action: 'En posición montaje', userId: 'maria', time: '16:00' },
-    { action: 'Desmontado', userId: 'carlos', time: '21:30' },
-  ]
+  const history = itemHistory[item.id] || []
 
   return (
     <>
@@ -222,16 +218,22 @@ export default function ItemDetail() {
             <Clock size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />
             Historial de Movimientos
           </div>
-          <div style={styles.timeline}>
-            {history.map((entry, i) => (
-              <div key={i} style={styles.timelineItem}>
-                <div style={styles.timelineDot} />
-                {i < history.length - 1 && <div style={styles.timelineLine} />}
-                <div style={styles.timeAction}>{entry.action}</div>
-                <div style={styles.timeMeta}>{getUserName(entry.userId)} — {entry.time}</div>
-              </div>
-            ))}
-          </div>
+          {history.length === 0 ? (
+            <div style={styles.notesPlaceholder}>
+              Sin movimientos registrados aún
+            </div>
+          ) : (
+            <div style={styles.timeline}>
+              {history.map((entry, i) => (
+                <div key={i} style={styles.timelineItem}>
+                  <div style={styles.timelineDot} />
+                  {i < history.length - 1 && <div style={styles.timelineLine} />}
+                  <div style={styles.timeAction}>{entry.action}</div>
+                  <div style={styles.timeMeta}>{getUserName(entry.userId)} — {entry.time}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       <BottomNav />

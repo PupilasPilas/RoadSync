@@ -181,7 +181,7 @@ const styles = {
 export default function Scan() {
   const { currentUser } = useAuth()
   const { phase } = usePhase()
-  const { items, updateItemStatus } = useItems()
+  const { items, updateItemStatus, addHistoryEntry } = useItems()
   const role = currentUser?.role
   const [scanResult, setScanResult] = useState(null)
   const [scanning, setScanning] = useState(false)
@@ -256,15 +256,16 @@ export default function Scan() {
       }
 
       // Actualizar estado real del ítem escaneado
+      const now = new Date()
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+
       if (scannedItemId) {
         const newStatus = isDescarga ? 'descargado' : isDeptLead ? 'ready-to-load' : 'loaded'
         updateItemStatus(scannedItemId, newStatus)
+        addHistoryEntry(scannedItemId, { action: result.message, userId: currentUser.id, time: timeStr })
       }
 
       setScanResult(result)
-
-      const now = new Date()
-      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
       setHistory(prev => [
         {
           id: Date.now(),
