@@ -4,7 +4,8 @@ import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
 import StatusBadge from '../components/StatusBadge'
 import { useAuth } from '../context/AuthContext'
-import { items, deptNames, deptColors, movementHistory, users } from '../data/mockData'
+import { useItems } from '../context/ItemsContext'
+import { deptNames, deptColors, movementHistory, users } from '../data/mockData'
 
 const getUserName = (userId) => {
   const user = users.find(u => u.id === userId)
@@ -149,6 +150,7 @@ function QRCode() {
 export default function ItemDetail() {
   const { id } = useParams()
   const { currentUser } = useAuth()
+  const { items } = useItems()
   const item = items.find(i => i.id === id)
   const role = currentUser?.role
 

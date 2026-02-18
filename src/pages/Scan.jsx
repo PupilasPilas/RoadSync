@@ -3,7 +3,9 @@ import { ScanLine, Check, X, Truck, ChevronDown } from 'lucide-react'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
 import { useAuth } from '../context/AuthContext'
-import { items, trucks, scanHistory as initialHistory, users } from '../data/mockData'
+import { usePhase } from '../context/PhaseContext'
+import { useItems } from '../context/ItemsContext'
+import { trucks, scanHistory as initialHistory, users } from '../data/mockData'
 
 const getUserName = (userId) => {
   const user = users.find(u => u.id === userId)
@@ -178,6 +180,8 @@ const styles = {
 
 export default function Scan() {
   const { currentUser } = useAuth()
+  const { phase } = usePhase()
+  const { items, updateItemStatus } = useItems()
   const role = currentUser?.role
   const [scanResult, setScanResult] = useState(null)
   const [scanning, setScanning] = useState(false)
@@ -187,9 +191,13 @@ export default function Scan() {
 
   const isLoadLead = role === 'load-lead'
   const isDeptLead = role === 'dept-lead'
+  const isDescarga = phase === 'Descarga'
 
   const handleScan = () => {
-    if (isLoadLead && !selectedTruck) return
+    // In Descarga phase, only load-lead can scan
+    if (isDescarga && !isLoadLead) return
+    // In Carga phase, load-lead needs a truck selected
+    if (!isDescarga && isLoadLead && !selectedTruck) return
 
     setScanning(true)
     setScanResult(null)
@@ -197,69 +205,60 @@ export default function Scan() {
     setTimeout(() => {
       setScanning(false)
       let result
+      let scannedItemId = null  // id del ítem real escaneado (null en casos de error/fallback)
 
-      if (isDeptLead) {
-        // Dept-lead: marks items as ready-to-load
+      if (isDescarga) {
+        // Load-lead descarga: loaded → descargado
+        const loadedItems = items.filter(i => i.status === 'loaded')
+        const notLoadedItems = items.filter(i => i.status !== 'loaded')
+        const roll = Math.random()
+        if (roll < 0.2 && notLoadedItems.length > 0) {
+          const item = notLoadedItems[Math.floor(Math.random() * notLoadedItems.length)]
+          result = { type: 'error', itemId: item.id, itemName: item.name, message: 'Error: el ítem no está cargado en camión' }
+        } else if (loadedItems.length > 0) {
+          const item = loadedItems[Math.floor(Math.random() * loadedItems.length)]
+          scannedItemId = item.id
+          result = { type: 'success', itemId: item.id, itemName: item.name, message: 'Descargado correctamente' }
+        } else {
+          result = { type: 'success', itemId: '—', itemName: 'Sin ítems cargados', message: 'No hay ítems cargados para descargar' }
+        }
+      } else if (isDeptLead) {
+        // Dept-lead carga: pending → ready-to-load
         const deptPendingItems = items.filter(i => i.dept === currentUser.dept && i.status === 'pending')
         const deptOtherItems = items.filter(i => i.dept !== currentUser.dept)
-
         const roll = Math.random()
         if (roll < 0.2 && deptOtherItems.length > 0) {
-          // Error: item not from their dept
           const item = deptOtherItems[Math.floor(Math.random() * deptOtherItems.length)]
-          result = {
-            type: 'error',
-            itemId: item.id,
-            itemName: item.name,
-            message: 'Error: este ítem no pertenece a tu departamento',
-          }
+          result = { type: 'error', itemId: item.id, itemName: item.name, message: 'Error: este ítem no pertenece a tu departamento' }
         } else if (deptPendingItems.length > 0) {
           const item = deptPendingItems[Math.floor(Math.random() * deptPendingItems.length)]
-          result = {
-            type: 'success',
-            itemId: item.id,
-            itemName: item.name,
-            message: 'Marcado como listo para cargar',
-          }
+          scannedItemId = item.id
+          result = { type: 'success', itemId: item.id, itemName: item.name, message: 'Marcado como listo para cargar' }
         } else {
-          result = {
-            type: 'success',
-            itemId: `${currentUser.dept.toUpperCase()}-01`,
-            itemName: 'Ítem de prueba',
-            message: 'Marcado como listo para cargar',
-          }
+          result = { type: 'success', itemId: '—', itemName: 'Sin pendientes', message: 'Todos los ítems ya están listos' }
         }
       } else {
-        // Load-lead: marks ready-to-load items as loaded + assigns truck
+        // Load-lead carga: ready-to-load → loaded
         const readyItems = items.filter(i => i.status === 'ready-to-load')
         const notReadyItems = items.filter(i => i.status === 'pending')
         const truckName = trucks.find(t => t.id === selectedTruck)?.name || selectedTruck
-
         const roll = Math.random()
         if (roll < 0.2 && notReadyItems.length > 0) {
           const item = notReadyItems[Math.floor(Math.random() * notReadyItems.length)]
-          result = {
-            type: 'error',
-            itemId: item.id,
-            itemName: item.name,
-            message: 'Error: el ítem no está listo para cargar',
-          }
+          result = { type: 'error', itemId: item.id, itemName: item.name, message: 'Error: el ítem no está listo para cargar' }
         } else if (readyItems.length > 0) {
           const item = readyItems[Math.floor(Math.random() * readyItems.length)]
-          result = {
-            type: 'success',
-            itemId: item.id,
-            itemName: item.name,
-            message: `Cargado en ${truckName}`,
-          }
+          scannedItemId = item.id
+          result = { type: 'success', itemId: item.id, itemName: item.name, message: `Cargado en ${truckName}` }
         } else {
-          result = {
-            type: 'success',
-            itemId: 'AUDIO-06',
-            itemName: 'Rack Monitor',
-            message: `Cargado en ${truckName}`,
-          }
+          result = { type: 'success', itemId: '—', itemName: 'Sin listos', message: 'No hay ítems listos para cargar' }
         }
+      }
+
+      // Actualizar estado real del ítem escaneado
+      if (scannedItemId) {
+        const newStatus = isDescarga ? 'descargado' : isDeptLead ? 'ready-to-load' : 'loaded'
+        updateItemStatus(scannedItemId, newStatus)
       }
 
       setScanResult(result)
@@ -285,51 +284,59 @@ export default function Scan() {
     }, 1500)
   }
 
-  const canScan = isDeptLead || (isLoadLead && selectedTruck)
+  // Dept-lead in Descarga phase: read-only
+  if (isDescarga && isDeptLead) {
+    return (
+      <>
+        <TopBar title="Escaneo" />
+        <div className="page" style={{ textAlign: 'center' }}>
+          <div style={{
+            background: 'var(--surface)',
+            borderRadius: 'var(--radius)',
+            padding: 32,
+            border: '1px solid var(--border)',
+            marginTop: 24,
+          }} className="fade-in">
+            <ScanLine size={48} color="var(--text-muted)" style={{ opacity: 0.3, marginBottom: 16 }} />
+            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Fase de Descarga</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              Solo el Jefe de Carga opera el escaneo en esta fase.
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'left', marginTop: 24 }}>
+            <div style={styles.historyTitle}>Últimos escaneos</div>
+            {history.map(scan => (
+              <div key={scan.id} style={styles.historyItem}>
+                <div style={{
+                  ...styles.historyDot,
+                  background: scan.result === 'success' ? 'var(--status-ok)' : 'var(--status-error)',
+                }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500 }}>{scan.itemId} — {scan.itemName}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                    {scan.message} — Escaneado por {getUserName(scan.userId)}
+                  </div>
+                </div>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{scan.time}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <BottomNav />
+      </>
+    )
+  }
+
+  // Determine if scan button should be active
+  const canScan = isDescarga
+    ? isLoadLead
+    : isDeptLead || (isLoadLead && selectedTruck)
 
   return (
     <>
       <TopBar title="Escaneo" />
       <div className="page" style={{ textAlign: 'center' }}>
-        {/* Load-lead truck selector */}
-        {isLoadLead && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }} className="fade-in">
-            <div style={{ position: 'relative', width: '100%', maxWidth: 300 }}>
-              <div
-                style={{
-                  ...styles.truckSelector,
-                  borderColor: selectedTruck ? 'var(--accent-red)' : 'var(--border)',
-                }}
-                onClick={() => setShowTruckDropdown(!showTruckDropdown)}
-              >
-                <Truck size={18} color={selectedTruck ? 'var(--accent-red)' : 'var(--text-muted)'} />
-                <span style={{ flex: 1, fontSize: 14, textAlign: 'left', color: selectedTruck ? 'var(--text)' : 'var(--text-muted)' }}>
-                  {selectedTruck ? trucks.find(t => t.id === selectedTruck)?.name : 'Seleccionar camión...'}
-                </span>
-                <ChevronDown size={16} color="var(--text-muted)" />
-              </div>
-              {showTruckDropdown && (
-                <div style={styles.truckDropdown}>
-                  {trucks.map(t => (
-                    <button
-                      key={t.id}
-                      style={{
-                        ...styles.truckOption,
-                        background: selectedTruck === t.id ? 'var(--surface-hover)' : 'transparent',
-                      }}
-                      onClick={() => { setSelectedTruck(t.id); setShowTruckDropdown(false) }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-hover)'}
-                      onMouseLeave={e => e.currentTarget.style.background = selectedTruck === t.id ? 'var(--surface-hover)' : 'transparent'}
-                    >
-                      {t.name} — {t.assignedTo}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
         <div style={styles.scanner} className="fade-in">
           <div style={styles.viewfinder}>
             <div style={styles.corner(true, true)} />
@@ -369,6 +376,44 @@ export default function Scan() {
                 {scanResult.itemId} — {scanResult.itemName}
               </div>
               <div style={styles.resultMsg}>{scanResult.message}</div>
+            </div>
+          )}
+
+          {/* Truck selector — below viewfinder, above scan button */}
+          {isLoadLead && !isDescarga && (
+            <div style={{ position: 'relative', width: '100%', maxWidth: 300, marginBottom: 16 }}>
+              <div
+                style={{
+                  ...styles.truckSelector,
+                  marginBottom: 0,
+                  borderColor: selectedTruck ? 'var(--accent-red)' : 'var(--border)',
+                }}
+                onClick={() => setShowTruckDropdown(!showTruckDropdown)}
+              >
+                <Truck size={18} color={selectedTruck ? 'var(--accent-red)' : 'var(--text-muted)'} />
+                <span style={{ flex: 1, fontSize: 14, textAlign: 'left', color: selectedTruck ? 'var(--text)' : 'var(--text-muted)' }}>
+                  {selectedTruck ? trucks.find(t => t.id === selectedTruck)?.name : 'Seleccionar camión...'}
+                </span>
+                <ChevronDown size={16} color="var(--text-muted)" />
+              </div>
+              {showTruckDropdown && (
+                <div style={{ ...styles.truckDropdown, bottom: '100%', top: 'auto', marginTop: 0, marginBottom: 4 }}>
+                  {trucks.map(t => (
+                    <button
+                      key={t.id}
+                      style={{
+                        ...styles.truckOption,
+                        background: selectedTruck === t.id ? 'var(--surface-hover)' : 'transparent',
+                      }}
+                      onClick={() => { setSelectedTruck(t.id); setShowTruckDropdown(false) }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-hover)'}
+                      onMouseLeave={e => e.currentTarget.style.background = selectedTruck === t.id ? 'var(--surface-hover)' : 'transparent'}
+                    >
+                      {t.name} — {t.assignedTo}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

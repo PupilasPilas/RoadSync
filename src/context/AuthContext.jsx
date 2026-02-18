@@ -1,14 +1,18 @@
-import { createContext, useContext, useState, useEffect } from 'react'
-import { users } from '../data/mockData'
+import { createContext, useContext, useState } from 'react'
+import { useUsers } from './UsersContext'
+import { users as initialUsers } from '../data/mockData'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
+  const { users } = useUsers()
+
+  // initialUsers para el bootstrap de localStorage (estado inicial en el mount)
+  // login usa `users` reactivo para encontrar también usuarios recién creados
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('roadsync_user')
     if (saved) {
-      const user = users.find(u => u.id === saved)
-      return user || null
+      return initialUsers.find(u => u.id === saved) || null
     }
     return null
   })

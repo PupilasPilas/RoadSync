@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Shield, Users, Package, ChevronLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { users } from '../data/mockData'
+import { useUsers } from '../context/UsersContext'
 
 const roles = [
   { id: 'admin', label: 'Admin', desc: 'Control total del sistema', icon: Shield },
@@ -143,6 +143,7 @@ const styles = {
 export default function Login() {
   const navigate = useNavigate()
   const { login, currentUser } = useAuth()
+  const { users } = useUsers()
   const [selectedRole, setSelectedRole] = useState(null)
 
   // If already logged in, redirect

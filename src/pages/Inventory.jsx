@@ -4,7 +4,8 @@ import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
 import ItemCard from '../components/ItemCard'
 import { useAuth } from '../context/AuthContext'
-import { items, deptNames } from '../data/mockData'
+import { useItems } from '../context/ItemsContext'
+import { deptNames } from '../data/mockData'
 
 const allDeptFilters = ['Todos', ...Object.values(deptNames)]
 const statusFilters = ['Todos', 'Cargado', 'Listo para cargar', 'Pendiente', 'Faltante']
@@ -81,6 +82,7 @@ const styles = {
 
 export default function Inventory() {
   const { currentUser } = useAuth()
+  const { items } = useItems()
   const role = currentUser?.role
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState('Todos')

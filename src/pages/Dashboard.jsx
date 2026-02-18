@@ -1,13 +1,16 @@
-import { MapPin, Calendar, MessageSquare } from 'lucide-react'
+import { useState } from 'react'
+import { MapPin, Calendar, MessageSquare, AlertTriangle } from 'lucide-react'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
 import ProgressBar from '../components/ProgressBar'
 import TruckCard from '../components/TruckCard'
 import ItemCard from '../components/ItemCard'
 import { useAuth } from '../context/AuthContext'
-import { show, departments, trucks, items, deptNames, deptColors } from '../data/mockData'
+import { usePhase } from '../context/PhaseContext'
+import { useItems } from '../context/ItemsContext'
+import { show, departments, trucks, deptNames, deptColors } from '../data/mockData'
 
-const phases = ['Descarga', 'Montaje', 'Desmontaje', 'Carga']
+const phases = ['Descarga', 'Carga']
 
 const styles = {
   showInfo: {
@@ -123,35 +126,159 @@ const styles = {
     color: 'var(--text-muted)',
     fontSize: 13,
   },
+  overlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.7)',
+    zIndex: 200,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modal: {
+    background: 'var(--surface)',
+    borderRadius: 'var(--radius)',
+    border: '1px solid var(--border)',
+    padding: 24,
+    width: '100%',
+    maxWidth: 360,
+    animation: 'fadeIn 0.2s ease-out',
+  },
+  modalIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: '50%',
+    background: 'rgba(245,166,35,0.15)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: '0 auto 16px',
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: 700,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalBody: {
+    fontSize: 13,
+    color: 'var(--text-muted)',
+    textAlign: 'center',
+    lineHeight: 1.6,
+    marginBottom: 24,
+  },
+  modalActions: {
+    display: 'flex',
+    gap: 10,
+  },
+  btnCancel: {
+    flex: 1,
+    padding: '12px 0',
+    borderRadius: 'var(--radius-sm)',
+    background: 'var(--border)',
+    fontSize: 14,
+    fontWeight: 600,
+    color: 'var(--text-muted)',
+  },
+  btnConfirm: {
+    flex: 1,
+    padding: '12px 0',
+    borderRadius: 'var(--radius-sm)',
+    background: 'var(--accent-red)',
+    fontSize: 14,
+    fontWeight: 600,
+    color: '#fff',
+  },
+}
+
+const phaseInfo = {
+  Descarga: {
+    description: 'Solo el Jefe de Carga podrá escanear. Los Jefes de Departamento pasan a modo solo lectura.',
+  },
+  Carga: {
+    description: 'Los Jefes de Departamento marcan ítems como listos, y el Jefe de Carga los carga al camión.',
+  },
 }
 
 function ShowInfo() {
+  const { phase, setPhase } = usePhase()
+  const [pendingPhase, setPendingPhase] = useState(null)
+
+  const handleChipClick = (p) => {
+    if (p === phase) return
+    setPendingPhase(p)
+  }
+
+  const handleConfirm = () => {
+    setPhase(pendingPhase)
+    setPendingPhase(null)
+  }
+
+  const handleCancel = () => setPendingPhase(null)
+
   return (
-    <div style={styles.showInfo} className="fade-in">
-      <div style={styles.showName}>{show.name}</div>
-      <div style={styles.showMeta}>
-        <span style={styles.metaItem}><MapPin size={14} /> {show.city} — {show.venue}</span>
-        <span style={styles.metaItem}><Calendar size={14} /> {show.date}</span>
+    <>
+      <div style={styles.showInfo} className="fade-in">
+        <div style={styles.showName}>{show.name}</div>
+        <div style={styles.showMeta}>
+          <span style={styles.metaItem}><MapPin size={14} /> {show.city} — {show.venue}</span>
+          <span style={styles.metaItem}><Calendar size={14} /> {show.date}</span>
+        </div>
+        <div style={styles.phases}>
+          {phases.map(p => (
+            <span
+              key={p}
+              onClick={() => handleChipClick(p)}
+              style={{
+                ...styles.phaseChip,
+                background: p === phase ? 'var(--accent-red)' : 'var(--border)',
+                color: p === phase ? '#fff' : 'var(--text-muted)',
+                cursor: p === phase ? 'default' : 'pointer',
+                transition: 'background 0.2s, color 0.2s',
+              }}
+            >
+              {p}
+            </span>
+          ))}
+        </div>
       </div>
-      <div style={styles.phases}>
-        {phases.map(p => (
-          <span
-            key={p}
-            style={{
-              ...styles.phaseChip,
-              background: p === show.phase ? 'var(--accent-red)' : 'var(--border)',
-              color: p === show.phase ? '#fff' : 'var(--text-muted)',
-            }}
-          >
-            {p}
-          </span>
-        ))}
-      </div>
-    </div>
+
+      {pendingPhase && (
+        <div style={styles.overlay} onClick={handleCancel}>
+          <div style={styles.modal} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalIcon}>
+              <AlertTriangle size={24} color="var(--accent-yellow)" />
+            </div>
+            <div style={styles.modalTitle}>Cambiar a fase {pendingPhase}</div>
+            <div style={styles.modalBody}>
+              {phaseInfo[pendingPhase].description}
+            </div>
+            <div style={styles.modalActions}>
+              <button style={styles.btnCancel} onClick={handleCancel}>Cancelar</button>
+              <button style={styles.btnConfirm} onClick={handleConfirm}>Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
 function GlobalDashboard() {
+  const { items } = useItems()
+
+  const totalItems = items.length
+  const loadedCount = items.filter(i => i.status === 'loaded').length
+  const overallProgress = totalItems > 0 ? Math.round((loadedCount / totalItems) * 100) : 0
+
+  const deptStats = departments.map(dept => {
+    const deptItems = items.filter(i => i.dept === dept.id)
+    const deptLoaded = deptItems.filter(i => i.status === 'loaded').length
+    const progress = deptItems.length > 0 ? Math.round((deptLoaded / deptItems.length) * 100) : 0
+    return { ...dept, progress }
+  })
+
   return (
     <>
       <ShowInfo />
@@ -159,15 +286,15 @@ function GlobalDashboard() {
       <div style={styles.overallProgress} className="fade-in">
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
           <span style={{ fontSize: 14, fontWeight: 600 }}>Progreso General</span>
-          <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent-yellow)' }}>{show.overallProgress}%</span>
+          <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent-yellow)' }}>{overallProgress}%</span>
         </div>
-        <ProgressBar progress={show.overallProgress} height={10} />
+        <ProgressBar progress={overallProgress} height={10} />
       </div>
 
       <div style={styles.section} className="fade-in">
         <div style={styles.sectionTitle}>Por Departamento</div>
         <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', padding: '6px 16px', border: '1px solid var(--border)' }}>
-          {departments.map(dept => (
+          {deptStats.map(dept => (
             <div key={dept.id} style={styles.deptRow}>
               <div style={{ ...styles.deptDot, background: dept.color }} />
               <div style={styles.deptName}>{dept.name}</div>
@@ -190,6 +317,7 @@ function GlobalDashboard() {
 }
 
 function DeptDashboard({ dept }) {
+  const { items } = useItems()
   const deptItems = items.filter(i => i.dept === dept)
   const pending = deptItems.filter(i => i.status === 'pending').length
   const ready = deptItems.filter(i => i.status === 'ready-to-load').length

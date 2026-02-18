@@ -1,16 +1,15 @@
 export const users = [
-  { id: 'juan', name: 'Juan Pérez', role: 'admin', dept: null, avatar: 'JP' },
-  { id: 'maria', name: 'María López', role: 'dept-lead', dept: 'audio', avatar: 'ML' },
-  { id: 'carlos', name: 'Carlos Ruiz', role: 'load-lead', dept: null, avatar: 'CR' },
-  { id: 'ana', name: 'Ana Torres', role: 'dept-lead', dept: 'video', avatar: 'AT' },
-  { id: 'diego', name: 'Diego Herrera', role: 'dept-lead', dept: 'iluminacion', avatar: 'DH' },
-  { id: 'laura', name: 'Laura Gómez', role: 'load-lead', dept: null, avatar: 'LG' },
+  { id: 'juan', name: 'Pablo Grajales', role: 'admin', dept: null, avatar: 'PG' },
+  { id: 'maria', name: 'José Romero', role: 'dept-lead', dept: 'audio', avatar: 'JR' },
+  { id: 'ana', name: 'Esteban Jiménez', role: 'dept-lead', dept: 'video', avatar: 'EJ' },
+  { id: 'diego', name: 'Flash', role: 'dept-lead', dept: 'iluminacion', avatar: 'FL' },
+  { id: 'laura', name: 'Serry', role: 'load-lead', dept: null, avatar: 'SE' },
 ]
 
 export const show = {
-  name: 'Latin Power Tour',
-  city: 'Bogotá',
-  venue: 'Estadio El Campín',
+  name: 'Gusanito Pin Pin USA',
+  city: 'Los Angeles, CA',
+  venue: 'Crypto.com Arena',
   date: '15 Feb 2026',
   phase: 'Carga',
   overallProgress: 68,
@@ -110,6 +109,7 @@ export const statusLabels = {
   pending: 'Pendiente',
   missing: 'Faltante',
   'wrong-truck': 'Camión incorrecto',
+  descargado: 'Descargado',
 }
 
 export const statusColors = {
@@ -118,6 +118,7 @@ export const statusColors = {
   pending: 'var(--status-pending)',
   missing: 'var(--status-error)',
   'wrong-truck': 'var(--accent-yellow)',
+  descargado: 'var(--status-ok)',
 }
 
 export const deptColors = {
