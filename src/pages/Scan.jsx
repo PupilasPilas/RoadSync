@@ -5,7 +5,8 @@ import BottomNav from '../components/Layout/BottomNav'
 import { useAuth } from '../context/AuthContext'
 import { usePhase } from '../context/PhaseContext'
 import { useItems } from '../context/ItemsContext'
-import { trucks, scanHistory as initialHistory, users } from '../data/mockData'
+import { useTrucks } from '../context/TrucksContext'
+import { scanHistory as initialHistory, users } from '../data/mockData'
 
 const getUserName = (userId) => {
   const user = users.find(u => u.id === userId)
@@ -182,6 +183,7 @@ export default function Scan() {
   const { currentUser } = useAuth()
   const { phase } = usePhase()
   const { items, updateItemStatus, addHistoryEntry } = useItems()
+  const { trucks } = useTrucks()
   const role = currentUser?.role
   const [scanResult, setScanResult] = useState(null)
   const [scanning, setScanning] = useState(false)

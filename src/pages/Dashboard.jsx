@@ -8,7 +8,8 @@ import ItemCard from '../components/ItemCard'
 import { useAuth } from '../context/AuthContext'
 import { usePhase } from '../context/PhaseContext'
 import { useItems } from '../context/ItemsContext'
-import { show, departments, trucks, deptNames, deptColors } from '../data/mockData'
+import { useTrucks } from '../context/TrucksContext'
+import { show, departments, deptNames, deptColors } from '../data/mockData'
 
 const phases = ['Descarga', 'Carga']
 
@@ -267,6 +268,7 @@ function ShowInfo() {
 
 function GlobalDashboard() {
   const { items } = useItems()
+  const { trucks } = useTrucks()
 
   const totalItems = items.length
   const loadedCount = items.filter(i => i.status === 'loaded').length
@@ -378,12 +380,14 @@ export default function Dashboard() {
   const { currentUser } = useAuth()
   const { resetItems } = useItems()
   const { resetPhase } = usePhase()
+  const { resetTrucks } = useTrucks()
   const [confirmReset, setConfirmReset] = useState(false)
   const isDeptLead = currentUser?.role === 'dept-lead'
 
   const handleReset = () => {
     resetItems()
     resetPhase()
+    resetTrucks()
     setConfirmReset(false)
   }
 
