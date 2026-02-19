@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MapPin, Calendar, MessageSquare, AlertTriangle, RotateCcw } from 'lucide-react'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
@@ -269,6 +270,7 @@ function ShowInfo() {
 function GlobalDashboard() {
   const { items } = useItems()
   const { trucks } = useTrucks()
+  const navigate = useNavigate()
 
   const totalItems = items.length
   const loadedCount = items.filter(i => i.status === 'loaded').length
@@ -297,7 +299,11 @@ function GlobalDashboard() {
         <div style={styles.sectionTitle}>Por Departamento</div>
         <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', padding: '6px 16px', border: '1px solid var(--border)' }}>
           {deptStats.map(dept => (
-            <div key={dept.id} style={styles.deptRow}>
+            <div
+              key={dept.id}
+              style={{ ...styles.deptRow, cursor: 'pointer' }}
+              onClick={() => navigate('/inventory')}
+            >
               <div style={{ ...styles.deptDot, background: dept.color }} />
               <div style={styles.deptName}>{dept.name}</div>
               <div style={{ flex: 1 }}>

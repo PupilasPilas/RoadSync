@@ -8,10 +8,11 @@ import { useItems } from '../context/ItemsContext'
 import { deptNames } from '../data/mockData'
 
 const allDeptFilters = ['Todos', ...Object.values(deptNames)]
-const statusFilters = ['Todos', 'Cargado', 'Listo para cargar', 'Pendiente', 'Faltante']
+const statusFilters = ['Todos', 'Cargado', 'Descargado', 'Listo para cargar', 'Pendiente', 'Faltante']
 
 const statusFilterMap = {
   'Cargado': 'loaded',
+  'Descargado': 'descargado',
   'Listo para cargar': 'ready-to-load',
   'Pendiente': 'pending',
   'Faltante': 'missing',

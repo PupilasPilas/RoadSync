@@ -10,7 +10,7 @@ import App from './App'
 import './index.css'
 
 // Si la versión cambió, limpia el caché automáticamente
-const APP_VERSION = '1.2.0'
+const APP_VERSION = '1.2.1'
 if (localStorage.getItem('roadsync_version') !== APP_VERSION) {
   localStorage.clear()
   localStorage.setItem('roadsync_version', APP_VERSION)
