@@ -1,16 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 
 const UsersContext = createContext(null)
-
-// Cliente secundario solo para crear cuentas de auth
-// sin afectar la sesión activa del admin
-const authClient = createClient(
-  'https://kobojmrvssqgnidmgddl.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvYm9qbXJ2c3NxZ25pZG1nZGRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4Njc0MTksImV4cCI6MjA4NzQ0MzQxOX0.pb6uAQeRS_iWmRkyqGb-zDJ18_S1N_H26Q0RhcYNRSo',
-  { auth: { persistSession: false, autoRefreshToken: false } }
-)
 
 export function UsersProvider({ children }) {
   const [users, setUsers] = useState([])
@@ -21,20 +12,20 @@ export function UsersProvider({ children }) {
   }, [])
 
   const addUser = async ({ email, password, name, role, dept, avatar }) => {
-    // 1. Crear cuenta de auth en cliente secundario (no afecta sesión del admin)
-    const { data, error } = await authClient.auth.signUp({ email, password })
+    // Usa función SQL con SECURITY DEFINER — crea auth user + perfil sin enviar emails
+    const { data: newUserId, error } = await supabase.rpc('create_user', {
+      user_email: email,
+      user_password: password,
+      user_name: name,
+      user_role: role,
+      user_dept: dept || '',
+      user_avatar: avatar,
+    })
     if (error) throw error
-    const newUserId = data.user.id
 
-    // 2. Insertar perfil con el cliente principal (sesión del admin)
-    const { data: profile, error: profileError } = await supabase
-      .from('users')
-      .insert({ id: newUserId, name, role, dept: role === 'dept-lead' ? dept : null, avatar })
-      .select()
-      .single()
-    if (profileError) throw profileError
-
-    setUsers(prev => [...prev, profile])
+    // Refrescar lista de usuarios
+    const { data: profile } = await supabase.from('users').select('*').eq('id', newUserId).single()
+    if (profile) setUsers(prev => [...prev, profile])
   }
 
   const updateUser = async (id, updates) => {
