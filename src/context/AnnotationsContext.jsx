@@ -5,20 +5,20 @@ const AnnotationsContext = createContext(null)
 const initialAnnotations = {
   item: {
     'AUDIO-08': [
-      { id: 1, text: 'Falta adaptador XLR-TRS, verificar antes de subir al camión.', authorName: 'María López', authorRole: 'dept-lead', timestamp: '10:15 · 23 Feb' },
+      { id: 1, text: 'Falta adaptador XLR-TRS, verificar antes de subir al camión.', authorName: 'José Romero', authorRole: 'dept-lead', timestamp: '10:15 · 23 Feb' },
     ],
     'VIDEO-03': [
-      { id: 2, text: 'Case con daño en la tapa, abrir con cuidado.', authorName: 'Ana García', authorRole: 'dept-lead', timestamp: '09:40 · 23 Feb' },
+      { id: 2, text: 'Case con daño en la tapa, abrir con cuidado.', authorName: 'Esteban Jiménez', authorRole: 'dept-lead', timestamp: '09:40 · 23 Feb' },
     ],
   },
   truck: {
     'truck-01': [
-      { id: 3, text: 'Sin rampa hidráulica, usar plancha manual para casos pesados.', authorName: 'Carlos Ruiz', authorRole: 'load-lead', timestamp: '08:00 · 23 Feb' },
+      { id: 3, text: 'Sin rampa hidráulica, usar plancha manual para casos pesados.', authorName: 'Serry', authorRole: 'load-lead', timestamp: '08:00 · 23 Feb' },
     ],
   },
   dept: {
     'audio': [
-      { id: 4, text: 'Reunión de carga a las 15:00 hs. Confirmar disponibilidad con producción.', authorName: 'Juan Admin', authorRole: 'admin', timestamp: '11:30 · 23 Feb' },
+      { id: 4, text: 'Reunión de carga a las 15:00 hs. Confirmar disponibilidad con producción.', authorName: 'Pablo Grajales', authorRole: 'admin', timestamp: '11:30 · 23 Feb' },
     ],
   },
 }

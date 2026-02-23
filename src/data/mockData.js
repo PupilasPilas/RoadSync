@@ -87,7 +87,7 @@ export const items = [
 ]
 
 export const scanHistory = [
-  { id: 1, itemId: 'AUDIO-05', itemName: 'Line Array K2 x12', result: 'success', message: 'Cargado correctamente', time: '22:15', userId: 'carlos' },
+  { id: 1, itemId: 'AUDIO-05', itemName: 'Line Array K2 x12', result: 'success', message: 'Cargado correctamente', time: '22:15', userId: 'laura' },
   { id: 2, itemId: 'AUDIO-07', itemName: 'Rack Amplificadores', result: 'error', message: 'Camión incorrecto', time: '22:08', userId: 'laura' },
   { id: 3, itemId: 'ILUM-04', itemName: 'Case Strobes x6', result: 'success', message: 'Cargado correctamente', time: '21:55', userId: 'diego' },
   { id: 4, itemId: 'VIDEO-04', itemName: 'Rack Señal Video', result: 'success', message: 'Cargado correctamente', time: '21:42', userId: 'ana' },
@@ -96,10 +96,9 @@ export const scanHistory = [
 export const movementHistory = {
   'AUDIO-02': [
     { action: 'Descargado', userId: 'juan', time: '14:30' },
-    { action: 'En posición montaje', userId: 'maria', time: '15:20' },
     { action: 'Desmontado', userId: 'juan', time: '21:00' },
     { action: 'Listo para carga', userId: 'maria', time: '22:15' },
-    { action: 'Cargado en Camión 01', userId: 'carlos', time: '22:30' },
+    { action: 'Cargado en Camión 01', userId: 'laura', time: '22:30' },
   ],
 }
 

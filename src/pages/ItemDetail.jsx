@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Hash, Layers, Clock, Edit2 } from 'lucide-react'
+import { Hash, Layers, Clock, Edit2, AlertTriangle, CheckCircle } from 'lucide-react'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
 import StatusBadge from '../components/StatusBadge'
@@ -125,6 +126,47 @@ const styles = {
     fontSize: 13,
     marginBottom: 16,
   },
+  actionBtn: {
+    width: '100%',
+    padding: '13px 0',
+    borderRadius: 'var(--radius)',
+    fontSize: 14,
+    fontWeight: 700,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  confirmRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    background: 'var(--surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius)',
+    padding: '12px 16px',
+  },
+  confirmText: {
+    flex: 1,
+    fontSize: 13,
+    color: 'var(--text-muted)',
+  },
+  confirmYes: {
+    padding: '8px 18px',
+    borderRadius: 'var(--radius-sm)',
+    fontSize: 13,
+    fontWeight: 700,
+    background: 'var(--accent-red)',
+    color: '#fff',
+  },
+  confirmNo: {
+    padding: '8px 18px',
+    borderRadius: 'var(--radius-sm)',
+    fontSize: 13,
+    fontWeight: 600,
+    background: 'var(--border)',
+    color: 'var(--text-muted)',
+  },
 }
 
 function QRCode() {
@@ -151,9 +193,10 @@ function QRCode() {
 export default function ItemDetail() {
   const { id } = useParams()
   const { currentUser } = useAuth()
-  const { items, itemHistory } = useItems()
+  const { items, itemHistory, updateItemStatus, addHistoryEntry } = useItems()
   const item = items.find(i => i.id === id)
   const role = currentUser?.role
+  const [confirmAction, setConfirmAction] = useState(false)
 
   if (!item) {
     return (
@@ -168,8 +211,24 @@ export default function ItemDetail() {
   }
 
   const canEdit = role === 'admin' || (role === 'dept-lead' && item.dept === currentUser.dept)
-
   const history = itemHistory[item.id] || []
+
+  const now = () => {
+    const d = new Date()
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+  }
+
+  const handleMarkMissing = () => {
+    updateItemStatus(item.id, 'missing')
+    addHistoryEntry(item.id, { action: 'Marcado como faltante', userId: currentUser.id, time: now() })
+    setConfirmAction(false)
+  }
+
+  const handleMarkFound = () => {
+    updateItemStatus(item.id, 'pending')
+    addHistoryEntry(item.id, { action: 'Marcado como encontrado', userId: currentUser.id, time: now() })
+    setConfirmAction(false)
+  }
 
   return (
     <>
@@ -205,6 +264,43 @@ export default function ItemDetail() {
         </div>
 
         <AnnotationsList type="item" entityId={item.id} />
+
+        {item.status !== 'descargado' && (
+          <div style={{ marginBottom: 20 }} className="fade-in">
+            {!confirmAction ? (
+              item.status === 'missing' ? (
+                <button
+                  style={{ ...styles.actionBtn, background: 'rgba(0,200,83,0.12)', color: 'var(--status-ok)', border: '1px solid rgba(0,200,83,0.25)' }}
+                  onClick={() => setConfirmAction(true)}
+                >
+                  <CheckCircle size={16} />
+                  Marcar como encontrado
+                </button>
+              ) : (
+                <button
+                  style={{ ...styles.actionBtn, background: 'rgba(227,6,19,0.08)', color: 'var(--status-error)', border: '1px solid rgba(227,6,19,0.2)' }}
+                  onClick={() => setConfirmAction(true)}
+                >
+                  <AlertTriangle size={16} />
+                  Marcar como faltante
+                </button>
+              )
+            ) : (
+              <div style={styles.confirmRow}>
+                <span style={styles.confirmText}>
+                  {item.status === 'missing' ? '¿Marcar como encontrado?' : '¿Marcar como faltante?'}
+                </span>
+                <button style={styles.confirmNo} onClick={() => setConfirmAction(false)}>No</button>
+                <button
+                  style={styles.confirmYes}
+                  onClick={item.status === 'missing' ? handleMarkFound : handleMarkMissing}
+                >
+                  Sí
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="fade-in">
           <div style={styles.sectionTitle}>
