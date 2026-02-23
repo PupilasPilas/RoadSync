@@ -39,6 +39,9 @@ export function ItemsProvider({ children }) {
 
     const channel = supabase
       .channel('items-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'items' }, (payload) => {
+        setItems(prev => prev.some(i => i.id === payload.new.id) ? prev : [...prev, mapItem(payload.new)])
+      })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'items' }, (payload) => {
         setItems(prev => prev.map(i => i.id === payload.new.id ? mapItem(payload.new) : i))
       })
@@ -81,6 +84,17 @@ export function ItemsProvider({ children }) {
     })
   }
 
+  const addItem = async ({ name, dept, type, icon }) => {
+    const prefixes = { audio: 'AUDIO', video: 'VIDEO', iluminacion: 'ILUM', staging: 'STAG', backline: 'BACK' }
+    const prefix = prefixes[dept] || 'ITEM'
+    const id = `${prefix}-${Date.now()}`
+    const order = items.filter(i => i.dept === dept).length + 1
+    const newItem = { id, name, dept, type, icon, order, status: 'pending', truck_id: null }
+    const { data, error } = await supabase.from('items').insert(newItem).select().single()
+    if (error) throw error
+    if (data) setItems(prev => [...prev, mapItem(data)])
+  }
+
   const resetItems = async () => {
     const { data } = await supabase.from('items').select('*').order('order')
     if (data) setItems(data.map(mapItem))
@@ -96,7 +110,7 @@ export function ItemsProvider({ children }) {
   }
 
   return (
-    <ItemsContext.Provider value={{ items, loading, updateItemStatus, resetItems, itemHistory, addHistoryEntry }}>
+    <ItemsContext.Provider value={{ items, loading, updateItemStatus, addItem, resetItems, itemHistory, addHistoryEntry }}>
       {children}
     </ItemsContext.Provider>
   )
