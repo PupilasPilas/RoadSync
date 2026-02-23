@@ -18,7 +18,7 @@ export function TrucksProvider({ children }) {
     const channel = supabase
       .channel('trucks-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trucks' }, (payload) => {
-        setRawTrucks(prev => [...prev, mapTruck(payload.new)])
+        setRawTrucks(prev => prev.some(t => t.id === payload.new.id) ? prev : [...prev, mapTruck(payload.new)])
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'trucks' }, (payload) => {
         setRawTrucks(prev => prev.map(t => t.id === payload.new.id ? mapTruck(payload.new) : t))
@@ -44,7 +44,8 @@ export function TrucksProvider({ children }) {
     delete dbRow.assignedTo
     delete dbRow.loaded
     delete dbRow.progress
-    const { data } = await supabase.from('trucks').insert(dbRow).select().single()
+    const { data, error } = await supabase.from('trucks').insert(dbRow).select().single()
+    if (error) throw error
     if (data) setRawTrucks(prev => [...prev, mapTruck(data)])
   }
 

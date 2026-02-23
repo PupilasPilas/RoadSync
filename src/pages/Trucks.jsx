@@ -107,25 +107,33 @@ export default function Trucks() {
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }))
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.name.trim()) return setError('El nombre es obligatorio.')
     if (!form.capacity || isNaN(form.capacity) || Number(form.capacity) <= 0)
       return setError('La capacidad debe ser un número mayor a 0.')
     setError('')
-    addTruck({
-      id: `truck-${Date.now()}`,
-      name: form.name.trim(),
-      assignedTo: form.assignedTo.trim() || 'Sin asignar',
-      capacity: Number(form.capacity),
-      loaded: 0,
-      progress: 0,
-      status: 'open',
-    })
-    setForm(EMPTY_FORM)
-    setShowModal(false)
+    setSaving(true)
+    try {
+      await addTruck({
+        id: `truck-${Date.now()}`,
+        name: form.name.trim(),
+        assignedTo: form.assignedTo.trim() || 'Sin asignar',
+        capacity: Number(form.capacity),
+        loaded: 0,
+        progress: 0,
+        status: 'open',
+      })
+      setForm(EMPTY_FORM)
+      setShowModal(false)
+    } catch (err) {
+      setError(err.message || 'Error al guardar. Intenta de nuevo.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleClose = () => {
@@ -195,7 +203,9 @@ export default function Trucks() {
 
             <div style={styles.actions}>
               <button style={styles.btnSecondary} onClick={handleClose}>Cancelar</button>
-              <button style={styles.btnPrimary} onClick={handleAdd}>Agregar</button>
+              <button style={{ ...styles.btnPrimary, opacity: saving ? 0.7 : 1 }} onClick={handleAdd} disabled={saving}>
+                {saving ? 'Guardando...' : 'Agregar'}
+              </button>
             </div>
           </div>
         </div>
