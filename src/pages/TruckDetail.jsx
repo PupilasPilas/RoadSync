@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Truck, CheckCircle, AlertTriangle, Edit2, MessageSquare, Trash2, X } from 'lucide-react'
+import { Truck, CheckCircle, AlertTriangle, Edit2, Trash2, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
 import ProgressBar from '../components/ProgressBar'
 import ItemCard from '../components/ItemCard'
+import AnnotationsList from '../components/AnnotationsList'
 import { useAuth } from '../context/AuthContext'
 import { useTrucks } from '../context/TrucksContext'
 import { useItems } from '../context/ItemsContext'
@@ -295,15 +296,7 @@ export default function TruckDetail() {
           </button>
         )}
 
-        <div style={{ marginBottom: 20 }} className="fade-in">
-          <div style={styles.sectionTitle}>
-            <MessageSquare size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-            Anotaciones
-          </div>
-          <div style={styles.notesPlaceholder}>
-            Las anotaciones del camión aparecerán aquí
-          </div>
-        </div>
+        <AnnotationsList type="truck" entityId={truck.id} />
 
         <div style={styles.sectionTitle}>Ítems asignados ({truckItems.length})</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

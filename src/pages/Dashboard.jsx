@@ -6,10 +6,12 @@ import BottomNav from '../components/Layout/BottomNav'
 import ProgressBar from '../components/ProgressBar'
 import TruckCard from '../components/TruckCard'
 import ItemCard from '../components/ItemCard'
+import AnnotationsList from '../components/AnnotationsList'
 import { useAuth } from '../context/AuthContext'
 import { usePhase } from '../context/PhaseContext'
 import { useItems } from '../context/ItemsContext'
 import { useTrucks } from '../context/TrucksContext'
+import { useAnnotations } from '../context/AnnotationsContext'
 import { show, departments, deptNames, deptColors } from '../data/mockData'
 
 const phases = ['Descarga', 'Carga']
@@ -369,14 +371,8 @@ function DeptDashboard({ dept }) {
         </div>
       </div>
 
-      <div style={styles.section} className="fade-in">
-        <div style={styles.sectionTitle}>
-          <MessageSquare size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-          Anotaciones
-        </div>
-        <div style={styles.notesPlaceholder}>
-          Las anotaciones del departamento aparecerán aquí
-        </div>
+      <div style={styles.section}>
+        <AnnotationsList type="dept" entityId={dept} />
       </div>
     </>
   )
@@ -387,6 +383,7 @@ export default function Dashboard() {
   const { resetItems } = useItems()
   const { resetPhase } = usePhase()
   const { resetTrucks } = useTrucks()
+  const { resetAnnotations } = useAnnotations()
   const [confirmReset, setConfirmReset] = useState(false)
   const isDeptLead = currentUser?.role === 'dept-lead'
 
@@ -394,6 +391,7 @@ export default function Dashboard() {
     resetItems()
     resetPhase()
     resetTrucks()
+    resetAnnotations()
     setConfirmReset(false)
   }
 

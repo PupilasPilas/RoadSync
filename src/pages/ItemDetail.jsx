@@ -1,8 +1,9 @@
 import { useParams } from 'react-router-dom'
-import { Hash, Layers, Clock, Edit2, MessageSquare } from 'lucide-react'
+import { Hash, Layers, Clock, Edit2 } from 'lucide-react'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
 import StatusBadge from '../components/StatusBadge'
+import AnnotationsList from '../components/AnnotationsList'
 import { useAuth } from '../context/AuthContext'
 import { useItems } from '../context/ItemsContext'
 import { deptNames, deptColors, users } from '../data/mockData'
@@ -203,15 +204,7 @@ export default function ItemDetail() {
           </div>
         </div>
 
-        <div className="fade-in" style={{ marginBottom: 20 }}>
-          <div style={styles.sectionTitle}>
-            <MessageSquare size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-            Anotaciones
-          </div>
-          <div style={styles.notesPlaceholder}>
-            Las anotaciones aparecerán aquí
-          </div>
-        </div>
+        <AnnotationsList type="item" entityId={item.id} />
 
         <div className="fade-in">
           <div style={styles.sectionTitle}>

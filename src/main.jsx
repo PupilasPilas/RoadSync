@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext'
 import { PhaseProvider } from './context/PhaseContext'
 import { ItemsProvider } from './context/ItemsContext'
 import { TrucksProvider } from './context/TrucksContext'
+import { AnnotationsProvider } from './context/AnnotationsContext'
 import App from './App'
 import './index.css'
 
@@ -24,7 +25,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <PhaseProvider>
             <ItemsProvider>
               <TrucksProvider>
-                <App />
+                <AnnotationsProvider>
+                  <App />
+                </AnnotationsProvider>
               </TrucksProvider>
             </ItemsProvider>
           </PhaseProvider>
