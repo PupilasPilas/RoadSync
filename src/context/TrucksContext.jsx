@@ -44,9 +44,9 @@ export function TrucksProvider({ children }) {
     delete dbRow.assignedTo
     delete dbRow.loaded
     delete dbRow.progress
-    const { data, error } = await supabase.from('trucks').insert(dbRow).select().single()
+    const { error } = await supabase.from('trucks').insert(dbRow)
     if (error) throw error
-    if (data) setRawTrucks(prev => [...prev, mapTruck(data)])
+    // El realtime INSERT actualiza el estado — no hacer update optimista para evitar duplicados
   }
 
   const updateTruck = async (id, updates) => {
