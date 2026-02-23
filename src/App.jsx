@@ -10,7 +10,8 @@ import TruckDetail from './pages/TruckDetail'
 import Users from './pages/Users'
 
 function RoleRoute({ children, allowedRoles }) {
-  const { currentUser } = useAuth()
+  const { currentUser, loading } = useAuth()
+  if (loading) return null
   if (!currentUser) return <Navigate to="/" replace />
   if (allowedRoles && !allowedRoles.includes(currentUser.role)) {
     return <Navigate to="/dashboard" replace />

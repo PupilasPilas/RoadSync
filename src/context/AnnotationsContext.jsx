@@ -1,55 +1,82 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 
 const AnnotationsContext = createContext(null)
 
-const initialAnnotations = {
-  item: {
-    'AUDIO-08': [
-      { id: 1, text: 'Falta adaptador XLR-TRS, verificar antes de subir al camión.', authorName: 'José Romero', authorRole: 'dept-lead', timestamp: '10:15 · 23 Feb' },
-    ],
-    'VIDEO-03': [
-      { id: 2, text: 'Case con daño en la tapa, abrir con cuidado.', authorName: 'Esteban Jiménez', authorRole: 'dept-lead', timestamp: '09:40 · 23 Feb' },
-    ],
-  },
-  truck: {
-    'truck-01': [
-      { id: 3, text: 'Sin rampa hidráulica, usar plancha manual para casos pesados.', authorName: 'Serry', authorRole: 'load-lead', timestamp: '08:00 · 23 Feb' },
-    ],
-  },
-  dept: {
-    'audio': [
-      { id: 4, text: 'Reunión de carga a las 15:00 hs. Confirmar disponibilidad con producción.', authorName: 'Pablo Grajales', authorRole: 'admin', timestamp: '11:30 · 23 Feb' },
-    ],
-  },
-}
+// Map DB row → app annotation shape
+const mapAnnotation = (row) => ({
+  id: row.id,
+  text: row.text,
+  authorName: row.author_name,
+  authorRole: row.author_role,
+  timestamp: (() => {
+    const d = new Date(row.created_at)
+    const time = d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+    const date = d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
+    return `${time} · ${date}`
+  })(),
+})
 
 export function AnnotationsProvider({ children }) {
-  const [annotations, setAnnotations] = useState(initialAnnotations)
+  // annotations[type][entityId] = [entries]
+  const [annotations, setAnnotations] = useState({ item: {}, truck: {}, dept: {} })
 
-  const addAnnotation = (type, entityId, text, user) => {
-    const now = new Date()
-    const time = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
-    const date = now.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
-    const entry = {
-      id: Date.now(),
+  useEffect(() => {
+    // Initial load of all annotations
+    supabase.from('annotations').select('*').order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (!data) return
+        const grouped = { item: {}, truck: {}, dept: {} }
+        for (const row of data) {
+          if (!grouped[row.type]) grouped[row.type] = {}
+          if (!grouped[row.type][row.entity_id]) grouped[row.type][row.entity_id] = []
+          grouped[row.type][row.entity_id].push(mapAnnotation(row))
+        }
+        setAnnotations(grouped)
+      })
+
+    const channel = supabase
+      .channel('annotations-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'annotations' }, (payload) => {
+        const row = payload.new
+        setAnnotations(prev => ({
+          ...prev,
+          [row.type]: {
+            ...prev[row.type],
+            [row.entity_id]: [mapAnnotation(row), ...(prev[row.type]?.[row.entity_id] || [])],
+          },
+        }))
+      })
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [])
+
+  const addAnnotation = async (type, entityId, text, user) => {
+    const { data } = await supabase.from('annotations').insert({
+      type,
+      entity_id: entityId,
       text,
-      authorName: user.name,
-      authorRole: user.role,
-      timestamp: `${time} · ${date}`,
+      author_id: user.id,
+      author_name: user.name,
+      author_role: user.role,
+    }).select().single()
+    // Realtime will update state; optimistic fallback if realtime is slow
+    if (data) {
+      setAnnotations(prev => ({
+        ...prev,
+        [type]: {
+          ...prev[type],
+          [entityId]: [mapAnnotation(data), ...(prev[type]?.[entityId] || [])],
+        },
+      }))
     }
-    setAnnotations(prev => ({
-      ...prev,
-      [type]: {
-        ...prev[type],
-        [entityId]: [entry, ...(prev[type]?.[entityId] || [])],
-      },
-    }))
   }
 
   const getAnnotations = (type, entityId) =>
     annotations[type]?.[entityId] || []
 
-  const resetAnnotations = () => setAnnotations(initialAnnotations)
+  const resetAnnotations = () => setAnnotations({ item: {}, truck: {}, dept: {} })
 
   return (
     <AnnotationsContext.Provider value={{ addAnnotation, getAnnotations, resetAnnotations }}>

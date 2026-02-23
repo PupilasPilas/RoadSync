@@ -1,17 +1,15 @@
-import { useState } from 'react'
-import { ScanLine, Check, X, Truck, ChevronDown } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { ScanLine, Check, X, Truck, ChevronDown, StopCircle, Keyboard } from 'lucide-react'
+import { Html5Qrcode } from 'html5-qrcode'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
 import { useAuth } from '../context/AuthContext'
 import { usePhase } from '../context/PhaseContext'
 import { useItems } from '../context/ItemsContext'
 import { useTrucks } from '../context/TrucksContext'
-import { scanHistory as initialHistory, users } from '../data/mockData'
+import { useUsers } from '../context/UsersContext'
 
-const getUserName = (userId) => {
-  const user = users.find(u => u.id === userId)
-  return user ? user.name : userId
-}
+const CAMERA_DIV_ID = 'qr-reader'
 
 const styles = {
   scanner: {
@@ -73,6 +71,25 @@ const styles = {
     gap: 10,
     boxShadow: '0 4px 20px rgba(227, 6, 19, 0.4)',
     transition: 'transform 0.15s',
+    fontFamily: 'inherit',
+  },
+  stopBtn: {
+    width: '100%',
+    maxWidth: 300,
+    padding: '16px 0',
+    borderRadius: 'var(--radius)',
+    background: 'var(--surface)',
+    fontSize: 16,
+    fontWeight: 700,
+    letterSpacing: '2px',
+    textTransform: 'uppercase',
+    color: 'var(--text-muted)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    border: '1px solid var(--border)',
+    fontFamily: 'inherit',
   },
   result: {
     textAlign: 'center',
@@ -159,6 +176,7 @@ const styles = {
     width: '100%',
     background: 'none',
     color: 'var(--text)',
+    fontFamily: 'inherit',
   },
   disabledBtn: {
     width: '100%',
@@ -177,6 +195,33 @@ const styles = {
     gap: 10,
     cursor: 'not-allowed',
   },
+  manualRow: {
+    display: 'flex',
+    gap: 8,
+    width: '100%',
+    maxWidth: 300,
+    marginTop: 12,
+  },
+  manualInput: {
+    flex: 1,
+    background: 'var(--surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-sm)',
+    padding: '10px 12px',
+    fontSize: 13,
+    color: 'var(--text)',
+    fontFamily: 'inherit',
+    outline: 'none',
+  },
+  manualBtn: {
+    padding: '10px 14px',
+    borderRadius: 'var(--radius-sm)',
+    background: 'var(--accent-red)',
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: 700,
+    fontFamily: 'inherit',
+  },
 }
 
 export default function Scan() {
@@ -184,108 +229,129 @@ export default function Scan() {
   const { phase } = usePhase()
   const { items, updateItemStatus, addHistoryEntry } = useItems()
   const { trucks } = useTrucks()
+  const { users } = useUsers()
   const role = currentUser?.role
   const [scanResult, setScanResult] = useState(null)
-  const [scanning, setScanning] = useState(false)
-  const [history, setHistory] = useState(initialHistory)
+  const [cameraActive, setCameraActive] = useState(false)
+  const [history, setHistory] = useState([])
   const [selectedTruck, setSelectedTruck] = useState(null)
   const [showTruckDropdown, setShowTruckDropdown] = useState(false)
+  const [manualCode, setManualCode] = useState('')
+  const [showManual, setShowManual] = useState(false)
+  const html5QrcodeRef = useRef(null)
 
   const isLoadLead = role === 'load-lead'
   const isDeptLead = role === 'dept-lead'
   const isDescarga = phase === 'Descarga'
 
-  const handleScan = () => {
-    // In Descarga phase, only load-lead can scan
-    if (isDescarga && !isLoadLead) return
-    // In Carga phase, load-lead needs a truck selected
-    if (!isDescarga && isLoadLead && !selectedTruck) return
-
-    setScanning(true)
-    setScanResult(null)
-
-    setTimeout(() => {
-      setScanning(false)
-      let result
-      let scannedItemId = null  // id del ítem real escaneado (null en casos de error/fallback)
-
-      if (isDescarga) {
-        // Load-lead descarga: loaded → descargado
-        const loadedItems = items.filter(i => i.status === 'loaded')
-        const notLoadedItems = items.filter(i => i.status !== 'loaded')
-        const roll = Math.random()
-        if (roll < 0.2 && notLoadedItems.length > 0) {
-          const item = notLoadedItems[Math.floor(Math.random() * notLoadedItems.length)]
-          result = { type: 'error', itemId: item.id, itemName: item.name, message: 'Error: el ítem no está cargado en camión' }
-        } else if (loadedItems.length > 0) {
-          const item = loadedItems[Math.floor(Math.random() * loadedItems.length)]
-          scannedItemId = item.id
-          result = { type: 'success', itemId: item.id, itemName: item.name, message: 'Descargado correctamente' }
-        } else {
-          result = { type: 'success', itemId: '—', itemName: 'Sin ítems cargados', message: 'No hay ítems cargados para descargar' }
-        }
-      } else if (isDeptLead) {
-        // Dept-lead carga: pending → ready-to-load
-        const deptPendingItems = items.filter(i => i.dept === currentUser.dept && i.status === 'pending')
-        const deptOtherItems = items.filter(i => i.dept !== currentUser.dept)
-        const roll = Math.random()
-        if (roll < 0.2 && deptOtherItems.length > 0) {
-          const item = deptOtherItems[Math.floor(Math.random() * deptOtherItems.length)]
-          result = { type: 'error', itemId: item.id, itemName: item.name, message: 'Error: este ítem no pertenece a tu departamento' }
-        } else if (deptPendingItems.length > 0) {
-          const item = deptPendingItems[Math.floor(Math.random() * deptPendingItems.length)]
-          scannedItemId = item.id
-          result = { type: 'success', itemId: item.id, itemName: item.name, message: 'Marcado como listo para cargar' }
-        } else {
-          result = { type: 'success', itemId: '—', itemName: 'Sin pendientes', message: 'Todos los ítems ya están listos' }
-        }
-      } else {
-        // Load-lead carga: ready-to-load → loaded
-        const readyItems = items.filter(i => i.status === 'ready-to-load')
-        const notReadyItems = items.filter(i => i.status === 'pending')
-        const truckName = trucks.find(t => t.id === selectedTruck)?.name || selectedTruck
-        const roll = Math.random()
-        if (roll < 0.2 && notReadyItems.length > 0) {
-          const item = notReadyItems[Math.floor(Math.random() * notReadyItems.length)]
-          result = { type: 'error', itemId: item.id, itemName: item.name, message: 'Error: el ítem no está listo para cargar' }
-        } else if (readyItems.length > 0) {
-          const item = readyItems[Math.floor(Math.random() * readyItems.length)]
-          scannedItemId = item.id
-          result = { type: 'success', itemId: item.id, itemName: item.name, message: `Cargado en ${truckName}` }
-        } else {
-          result = { type: 'success', itemId: '—', itemName: 'Sin listos', message: 'No hay ítems listos para cargar' }
-        }
-      }
-
-      // Actualizar estado real del ítem escaneado
-      const now = new Date()
-      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-
-      if (scannedItemId) {
-        const newStatus = isDescarga ? 'descargado' : isDeptLead ? 'ready-to-load' : 'loaded'
-        updateItemStatus(scannedItemId, newStatus)
-        addHistoryEntry(scannedItemId, { action: result.message, userId: currentUser.id, time: timeStr })
-      }
-
-      setScanResult(result)
-      setHistory(prev => [
-        {
-          id: Date.now(),
-          itemId: result.itemId,
-          itemName: result.itemName,
-          result: result.type === 'success' ? 'success' : 'error',
-          message: result.message,
-          time: timeStr,
-          userId: currentUser.id,
-        },
-        ...prev,
-      ])
-
-      if (navigator.vibrate) {
-        navigator.vibrate(result.type === 'success' ? 100 : [100, 50, 100])
-      }
-    }, 1500)
+  const getUserName = (userId) => {
+    const user = users.find(u => u.id === userId)
+    return user ? user.name : userId
   }
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => { stopCamera(true) }
+  }, [])
+
+  const processScannedCode = (code) => {
+    const trimmed = code.trim().toUpperCase()
+    const now = new Date()
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+
+    const item = items.find(i => i.id === trimmed)
+    let result
+
+    if (!item) {
+      result = { type: 'error', itemId: trimmed, itemName: '—', message: 'Ítem no encontrado en el sistema' }
+    } else if (isDescarga) {
+      if (item.status !== 'loaded') {
+        result = { type: 'error', itemId: item.id, itemName: item.name, message: 'Error: el ítem no está cargado en camión' }
+      } else {
+        updateItemStatus(item.id, 'descargado')
+        addHistoryEntry(item.id, { action: 'Descargado', userId: currentUser.id, time: timeStr })
+        result = { type: 'success', itemId: item.id, itemName: item.name, message: 'Descargado correctamente' }
+      }
+    } else if (isDeptLead) {
+      if (item.dept !== currentUser.dept) {
+        result = { type: 'error', itemId: item.id, itemName: item.name, message: 'Error: este ítem no pertenece a tu departamento' }
+      } else if (item.status !== 'pending') {
+        result = { type: 'error', itemId: item.id, itemName: item.name, message: `El ítem ya está en estado: ${item.status}` }
+      } else {
+        updateItemStatus(item.id, 'ready-to-load')
+        addHistoryEntry(item.id, { action: 'Marcado como listo para cargar', userId: currentUser.id, time: timeStr })
+        result = { type: 'success', itemId: item.id, itemName: item.name, message: 'Marcado como listo para cargar' }
+      }
+    } else {
+      // Load-lead carga
+      if (item.status !== 'ready-to-load') {
+        result = { type: 'error', itemId: item.id, itemName: item.name, message: 'Error: el ítem no está listo para cargar' }
+      } else {
+        const truckName = trucks.find(t => t.id === selectedTruck)?.name || selectedTruck
+        updateItemStatus(item.id, 'loaded', selectedTruck)
+        addHistoryEntry(item.id, { action: `Cargado en ${truckName}`, userId: currentUser.id, time: timeStr })
+        result = { type: 'success', itemId: item.id, itemName: item.name, message: `Cargado en ${truckName}` }
+      }
+    }
+
+    setScanResult(result)
+    setHistory(prev => [{
+      id: Date.now(),
+      itemId: result.itemId,
+      itemName: result.itemName,
+      result: result.type,
+      message: result.message,
+      time: timeStr,
+      userId: currentUser.id,
+    }, ...prev])
+
+    if (navigator.vibrate) {
+      navigator.vibrate(result.type === 'success' ? 100 : [100, 50, 100])
+    }
+  }
+
+  const startCamera = async () => {
+    setScanResult(null)
+    setCameraActive(true)
+    // Wait for DOM to mount the div
+    await new Promise(r => setTimeout(r, 100))
+    const html5Qrcode = new Html5Qrcode(CAMERA_DIV_ID)
+    html5QrcodeRef.current = html5Qrcode
+    try {
+      await html5Qrcode.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 200, height: 200 } },
+        (decodedText) => {
+          stopCamera()
+          processScannedCode(decodedText)
+        },
+        () => {} // ignore per-frame errors
+      )
+    } catch {
+      setCameraActive(false)
+      html5QrcodeRef.current = null
+    }
+  }
+
+  const stopCamera = async (silent = false) => {
+    if (html5QrcodeRef.current) {
+      try { await html5QrcodeRef.current.stop() } catch { /* ignore */ }
+      html5QrcodeRef.current = null
+    }
+    if (!silent) setCameraActive(false)
+  }
+
+  const handleManualSubmit = () => {
+    if (!manualCode.trim()) return
+    stopCamera()
+    processScannedCode(manualCode)
+    setManualCode('')
+    setShowManual(false)
+  }
+
+  const canScan = isDescarga
+    ? isLoadLead
+    : isDeptLead || (isLoadLead && selectedTruck)
 
   // Dept-lead in Descarga phase: read-only
   if (isDescarga && isDeptLead) {
@@ -311,10 +377,7 @@ export default function Scan() {
             <div style={styles.historyTitle}>Últimos escaneos</div>
             {history.map(scan => (
               <div key={scan.id} style={styles.historyItem}>
-                <div style={{
-                  ...styles.historyDot,
-                  background: scan.result === 'success' ? 'var(--status-ok)' : 'var(--status-error)',
-                }} />
+                <div style={{ ...styles.historyDot, background: scan.result === 'success' ? 'var(--status-ok)' : 'var(--status-error)' }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 500 }}>{scan.itemId} — {scan.itemName}</div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
@@ -331,26 +394,30 @@ export default function Scan() {
     )
   }
 
-  // Determine if scan button should be active
-  const canScan = isDescarga
-    ? isLoadLead
-    : isDeptLead || (isLoadLead && selectedTruck)
-
   return (
     <>
       <TopBar title="Escaneo" />
       <div className="page" style={{ textAlign: 'center' }}>
         <div style={styles.scanner} className="fade-in">
           <div style={styles.viewfinder}>
-            <div style={styles.corner(true, true)} />
-            <div style={styles.corner(true, false)} />
-            <div style={styles.corner(false, true)} />
-            <div style={styles.corner(false, false)} />
-            {scanning && <div style={styles.scanLineAnim} />}
-            {!scanning && !scanResult && (
+            {!cameraActive && (
+              <>
+                <div style={styles.corner(true, true)} />
+                <div style={styles.corner(true, false)} />
+                <div style={styles.corner(false, true)} />
+                <div style={styles.corner(false, false)} />
+              </>
+            )}
+            {!cameraActive && !scanResult && (
               <ScanLine size={48} color="var(--text-muted)" style={{ opacity: 0.3 }} />
             )}
-            {scanResult && (
+            {cameraActive && (
+              <div
+                id={CAMERA_DIV_ID}
+                style={{ width: '100%', height: '100%', borderRadius: 18, overflow: 'hidden' }}
+              />
+            )}
+            {!cameraActive && scanResult && (
               <div style={{
                 ...styles.resultIcon,
                 background: scanResult.type === 'success' ? 'var(--status-ok)' : 'var(--status-error)',
@@ -363,7 +430,7 @@ export default function Scan() {
             )}
           </div>
 
-          {scanResult && (
+          {scanResult && !cameraActive && (
             <div
               style={{
                 ...styles.result,
@@ -372,25 +439,18 @@ export default function Scan() {
               }}
               className="fade-in"
             >
-              <div style={{
-                ...styles.resultTitle,
-                color: scanResult.type === 'success' ? 'var(--status-ok)' : 'var(--status-error)',
-              }}>
+              <div style={{ ...styles.resultTitle, color: scanResult.type === 'success' ? 'var(--status-ok)' : 'var(--status-error)' }}>
                 {scanResult.itemId} — {scanResult.itemName}
               </div>
               <div style={styles.resultMsg}>{scanResult.message}</div>
             </div>
           )}
 
-          {/* Truck selector — below viewfinder, above scan button */}
+          {/* Truck selector — load-lead carga */}
           {isLoadLead && !isDescarga && (
             <div style={{ position: 'relative', width: '100%', maxWidth: 300, marginBottom: 16 }}>
               <div
-                style={{
-                  ...styles.truckSelector,
-                  marginBottom: 0,
-                  borderColor: selectedTruck ? 'var(--accent-red)' : 'var(--border)',
-                }}
+                style={{ ...styles.truckSelector, marginBottom: 0, borderColor: selectedTruck ? 'var(--accent-red)' : 'var(--border)' }}
                 onClick={() => setShowTruckDropdown(!showTruckDropdown)}
               >
                 <Truck size={18} color={selectedTruck ? 'var(--accent-red)' : 'var(--text-muted)'} />
@@ -404,10 +464,7 @@ export default function Scan() {
                   {trucks.map(t => (
                     <button
                       key={t.id}
-                      style={{
-                        ...styles.truckOption,
-                        background: selectedTruck === t.id ? 'var(--surface-hover)' : 'transparent',
-                      }}
+                      style={{ ...styles.truckOption, background: selectedTruck === t.id ? 'var(--surface-hover)' : 'transparent' }}
                       onClick={() => { setSelectedTruck(t.id); setShowTruckDropdown(false) }}
                       onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-hover)'}
                       onMouseLeave={e => e.currentTarget.style.background = selectedTruck === t.id ? 'var(--surface-hover)' : 'transparent'}
@@ -420,18 +477,16 @@ export default function Scan() {
             </div>
           )}
 
-          {canScan ? (
-            <button
-              style={{
-                ...styles.scanBtn,
-                opacity: scanning ? 0.7 : 1,
-                transform: scanning ? 'scale(0.98)' : 'scale(1)',
-              }}
-              onClick={handleScan}
-              disabled={scanning}
-            >
+          {/* Scan / Stop button */}
+          {cameraActive ? (
+            <button style={styles.stopBtn} onClick={() => stopCamera()}>
+              <StopCircle size={20} />
+              DETENER CÁMARA
+            </button>
+          ) : canScan ? (
+            <button style={styles.scanBtn} onClick={startCamera}>
               <ScanLine size={20} />
-              {scanning ? 'ESCANEANDO...' : 'ESCANEAR'}
+              ESCANEAR
             </button>
           ) : (
             <div style={styles.disabledBtn}>
@@ -439,16 +494,45 @@ export default function Scan() {
               SELECCIONA UN CAMIÓN
             </div>
           )}
+
+          {/* Manual input fallback */}
+          {canScan && !cameraActive && (
+            <div style={{ marginTop: 12 }}>
+              <button
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}
+                onClick={() => setShowManual(v => !v)}
+              >
+                <Keyboard size={14} />
+                Ingresar código manual
+              </button>
+              {showManual && (
+                <div style={styles.manualRow}>
+                  <input
+                    type="text"
+                    value={manualCode}
+                    onChange={e => setManualCode(e.target.value)}
+                    placeholder="Ej: AUDIO-08"
+                    style={styles.manualInput}
+                    onKeyDown={e => e.key === 'Enter' && handleManualSubmit()}
+                    autoCapitalize="characters"
+                  />
+                  <button style={styles.manualBtn} onClick={handleManualSubmit}>OK</button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div style={{ textAlign: 'left' }}>
           <div style={styles.historyTitle}>Últimos escaneos</div>
+          {history.length === 0 && (
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', paddingTop: 16 }}>
+              Sin escaneos en esta sesión
+            </div>
+          )}
           {history.map(scan => (
             <div key={scan.id} style={styles.historyItem}>
-              <div style={{
-                ...styles.historyDot,
-                background: scan.result === 'success' ? 'var(--status-ok)' : 'var(--status-error)',
-              }} />
+              <div style={{ ...styles.historyDot, background: scan.result === 'success' ? 'var(--status-ok)' : 'var(--status-error)' }} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 500 }}>{scan.itemId} — {scan.itemName}</div>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>

@@ -1,37 +1,47 @@
-import { createContext, useContext, useState } from 'react'
-import { useUsers } from './UsersContext'
-import { users as initialUsers } from '../data/mockData'
+import { createContext, useContext, useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const { users } = useUsers()
+  const [currentUser, setCurrentUser] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  // initialUsers para el bootstrap de localStorage (estado inicial en el mount)
-  // login usa `users` reactivo para encontrar también usuarios recién creados
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('roadsync_user')
-    if (saved) {
-      return initialUsers.find(u => u.id === saved) || null
-    }
-    return null
-  })
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (session) {
+          await fetchUserProfile(session.user.id)
+        } else {
+          setCurrentUser(null)
+          setLoading(false)
+        }
+      }
+    )
+    return () => subscription.unsubscribe()
+  }, [])
 
-  const login = (userId) => {
-    const user = users.find(u => u.id === userId)
-    if (user) {
-      setCurrentUser(user)
-      localStorage.setItem('roadsync_user', userId)
-    }
+  const fetchUserProfile = async (userId) => {
+    const { data } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single()
+    if (data) setCurrentUser(data)
+    setLoading(false)
   }
 
-  const logout = () => {
-    setCurrentUser(null)
-    localStorage.removeItem('roadsync_user')
+  const login = async (email, password) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) throw error
+  }
+
+  const logout = async () => {
+    await supabase.auth.signOut()
   }
 
   return (
-    <AuthContext.Provider value={{ currentUser, login, logout }}>
+    <AuthContext.Provider value={{ currentUser, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

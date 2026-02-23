@@ -1,20 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Shield, Users, Package, ChevronLeft } from 'lucide-react'
+import { LogIn, AlertCircle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { useUsers } from '../context/UsersContext'
-
-const roles = [
-  { id: 'admin', label: 'Admin', desc: 'Control total del sistema', icon: Shield },
-  { id: 'dept-lead', label: 'Jefe de Depto', desc: 'Gestión por departamento', icon: Users },
-  { id: 'load-lead', label: 'Jefe de Carga', desc: 'Control de camiones y escaneo', icon: Package },
-]
-
-const deptLabels = {
-  audio: 'Audio',
-  video: 'Video',
-  iluminacion: 'Iluminación',
-}
 
 const styles = {
   container: {
@@ -36,129 +23,122 @@ const styles = {
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
   },
-  subtitle: {
-    fontSize: 13,
-    color: 'var(--text-muted)',
-    letterSpacing: '3px',
-    textTransform: 'uppercase',
-    marginBottom: 60,
-  },
-  label: {
-    fontSize: 12,
-    color: 'var(--text-muted)',
-    textTransform: 'uppercase',
-    letterSpacing: '2px',
-    marginBottom: 16,
-  },
-  roleBtn: {
-    width: '100%',
-    maxWidth: 340,
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius)',
-    padding: '18px 20px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 16,
-    marginBottom: 12,
-    transition: 'all 0.2s',
-    cursor: 'pointer',
-  },
-  iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    background: 'var(--accent-red)22',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  roleName: {
-    fontSize: 16,
-    fontWeight: 600,
-  },
-  roleDesc: {
-    fontSize: 12,
-    color: 'var(--text-muted)',
-    marginTop: 2,
-  },
   redLine: {
     width: 60,
     height: 3,
     background: 'var(--accent-red)',
     borderRadius: 2,
-    marginBottom: 48,
+    marginBottom: 16,
   },
-  backBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
+  subtitle: {
     fontSize: 13,
     color: 'var(--text-muted)',
-    marginBottom: 24,
-    cursor: 'pointer',
-    background: 'none',
-    border: 'none',
-    padding: 0,
+    letterSpacing: '3px',
+    textTransform: 'uppercase',
+    marginBottom: 52,
   },
-  userBtn: {
+  form: {
     width: '100%',
     maxWidth: 340,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 14,
+  },
+  label: {
+    fontSize: 11,
+    color: 'var(--text-muted)',
+    textTransform: 'uppercase',
+    letterSpacing: '1.5px',
+    marginBottom: 6,
+    display: 'block',
+  },
+  input: {
+    width: '100%',
     background: 'var(--surface)',
     border: '1px solid var(--border)',
     borderRadius: 'var(--radius)',
-    padding: '16px 20px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 14,
-    marginBottom: 10,
-    transition: 'all 0.2s',
-    cursor: 'pointer',
+    padding: '14px 16px',
+    fontSize: 15,
+    color: 'var(--text)',
+    outline: 'none',
+    boxSizing: 'border-box',
+    transition: 'border-color 0.2s',
+    fontFamily: 'inherit',
   },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: '50%',
+  inputFocus: {
+    borderColor: 'var(--accent-red)',
+  },
+  btn: {
+    width: '100%',
+    padding: '15px 0',
+    borderRadius: 'var(--radius)',
     background: 'var(--accent-red)',
     color: '#fff',
+    fontSize: 15,
+    fontWeight: 700,
+    letterSpacing: '1.5px',
+    textTransform: 'uppercase',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: 14,
-    fontWeight: 700,
-    letterSpacing: '1px',
-    flexShrink: 0,
+    gap: 10,
+    cursor: 'pointer',
+    border: 'none',
+    marginTop: 6,
+    transition: 'opacity 0.2s',
+    boxShadow: '0 4px 20px rgba(227, 6, 19, 0.35)',
+    fontFamily: 'inherit',
   },
-  userName: {
-    fontSize: 15,
-    fontWeight: 600,
-  },
-  userDept: {
-    fontSize: 12,
-    color: 'var(--text-muted)',
-    marginTop: 2,
+  errorBox: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    background: 'rgba(227,6,19,0.08)',
+    border: '1px solid rgba(227,6,19,0.25)',
+    borderRadius: 'var(--radius-sm)',
+    padding: '12px 14px',
+    fontSize: 13,
+    color: 'var(--status-error)',
   },
 }
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login, currentUser } = useAuth()
-  const { users } = useUsers()
-  const [selectedRole, setSelectedRole] = useState(null)
+  const { login, currentUser, loading } = useAuth()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [emailFocused, setEmailFocused] = useState(false)
+  const [passFocused, setPassFocused] = useState(false)
 
-  // If already logged in, redirect
-  if (currentUser) {
-    navigate('/dashboard', { replace: true })
-    return null
+  useEffect(() => {
+    if (currentUser) navigate('/dashboard', { replace: true })
+  }, [currentUser, navigate])
+
+  if (loading) {
+    return (
+      <div style={{ ...styles.container, gap: 16 }}>
+        <div style={styles.logo}>RoadSync</div>
+        <div style={styles.redLine} />
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', letterSpacing: '2px' }}>CARGANDO...</div>
+      </div>
+    )
   }
 
-  const filteredUsers = selectedRole
-    ? users.filter(u => u.role === selectedRole)
-    : []
-
-  const handleSelectUser = (userId) => {
-    login(userId)
-    navigate('/dashboard')
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!email.trim() || !password) return
+    setError('')
+    setSubmitting(true)
+    try {
+      await login(email.trim(), password)
+      navigate('/dashboard', { replace: true })
+    } catch {
+      setError('Email o contraseña incorrectos')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -167,52 +147,59 @@ export default function Login() {
       <div style={styles.redLine} />
       <div style={styles.subtitle}>Tour Logistics</div>
 
-      {!selectedRole ? (
-        <>
-          <div style={styles.label}>Selecciona tu rol</div>
-          {roles.map((role) => {
-            const Icon = role.icon
-            return (
-              <button
-                key={role.id}
-                style={styles.roleBtn}
-                onClick={() => setSelectedRole(role.id)}
-              >
-                <div style={styles.iconWrap}>
-                  <Icon size={22} color="var(--accent-red)" />
-                </div>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={styles.roleName}>{role.label}</div>
-                  <div style={styles.roleDesc}>{role.desc}</div>
-                </div>
-              </button>
-            )
-          })}
-        </>
-      ) : (
-        <>
-          <button style={styles.backBtn} onClick={() => setSelectedRole(null)}>
-            <ChevronLeft size={16} />
-            Cambiar rol
-          </button>
-          <div style={styles.label}>¿Quién eres?</div>
-          {filteredUsers.map((user) => (
-            <button
-              key={user.id}
-              style={styles.userBtn}
-              onClick={() => handleSelectUser(user.id)}
-            >
-              <div style={styles.avatar}>{user.avatar}</div>
-              <div style={{ textAlign: 'left' }}>
-                <div style={styles.userName}>{user.name}</div>
-                <div style={styles.userDept}>
-                  {user.dept ? deptLabels[user.dept] || user.dept : roles.find(r => r.id === user.role)?.label}
-                </div>
-              </div>
-            </button>
-          ))}
-        </>
-      )}
+      <form style={styles.form} onSubmit={handleSubmit}>
+        <div>
+          <label style={styles.label}>Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="usuario@email.com"
+            autoComplete="email"
+            required
+            style={{
+              ...styles.input,
+              ...(emailFocused ? styles.inputFocus : {}),
+            }}
+            onFocus={() => setEmailFocused(true)}
+            onBlur={() => setEmailFocused(false)}
+          />
+        </div>
+
+        <div>
+          <label style={styles.label}>Contraseña</label>
+          <input
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            placeholder="••••••••"
+            autoComplete="current-password"
+            required
+            style={{
+              ...styles.input,
+              ...(passFocused ? styles.inputFocus : {}),
+            }}
+            onFocus={() => setPassFocused(true)}
+            onBlur={() => setPassFocused(false)}
+          />
+        </div>
+
+        {error && (
+          <div style={styles.errorBox}>
+            <AlertCircle size={16} />
+            {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          style={{ ...styles.btn, opacity: submitting ? 0.7 : 1 }}
+          disabled={submitting}
+        >
+          <LogIn size={18} />
+          {submitting ? 'INGRESANDO...' : 'INGRESAR'}
+        </button>
+      </form>
     </div>
   )
 }

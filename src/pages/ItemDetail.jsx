@@ -1,18 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Hash, Layers, Clock, Edit2, AlertTriangle, CheckCircle } from 'lucide-react'
+import QRCodeLib from 'qrcode'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
 import StatusBadge from '../components/StatusBadge'
 import AnnotationsList from '../components/AnnotationsList'
 import { useAuth } from '../context/AuthContext'
 import { useItems } from '../context/ItemsContext'
-import { deptNames, deptColors, users } from '../data/mockData'
-
-const getUserName = (userId) => {
-  const user = users.find(u => u.id === userId)
-  return user ? user.name : userId
-}
+import { useUsers } from '../context/UsersContext'
+import { deptNames, deptColors } from '../data/mockData'
 
 const styles = {
   header: {
@@ -169,23 +166,23 @@ const styles = {
   },
 }
 
-function QRCode() {
-  const pattern = [
-    1,1,1,0,1,1,1,
-    1,0,1,1,1,0,1,
-    1,1,1,0,1,1,1,
-    0,1,0,1,0,1,0,
-    1,1,1,0,1,1,1,
-    1,0,1,0,1,0,1,
-    1,1,1,0,1,1,1,
-  ]
+function QRCode({ value }) {
+  const [dataUrl, setDataUrl] = useState(null)
+
+  useEffect(() => {
+    QRCodeLib.toDataURL(value, {
+      width: 120,
+      margin: 1,
+      color: { dark: '#000000', light: '#ffffff' },
+    }).then(setDataUrl)
+  }, [value])
+
   return (
     <div style={styles.qrContainer}>
-      <div style={styles.qrGrid}>
-        {pattern.map((filled, i) => (
-          <div key={i} style={{ background: filled ? '#000' : '#fff', borderRadius: 1 }} />
-        ))}
-      </div>
+      {dataUrl
+        ? <img src={dataUrl} alt={`QR ${value}`} style={{ width: 120, height: 120, borderRadius: 4 }} />
+        : <div style={{ width: 120, height: 120, background: '#f0f0f0', borderRadius: 4 }} />
+      }
     </div>
   )
 }
@@ -194,9 +191,15 @@ export default function ItemDetail() {
   const { id } = useParams()
   const { currentUser } = useAuth()
   const { items, itemHistory, updateItemStatus, addHistoryEntry } = useItems()
+  const { users } = useUsers()
   const item = items.find(i => i.id === id)
   const role = currentUser?.role
   const [confirmAction, setConfirmAction] = useState(false)
+
+  const getUserName = (userId) => {
+    const user = users.find(u => u.id === userId)
+    return user ? user.name : userId
+  }
 
   if (!item) {
     return (
@@ -248,7 +251,7 @@ export default function ItemDetail() {
           <StatusBadge status={item.status} large />
         </div>
 
-        <QRCode />
+        <QRCode value={item.id} />
 
         <div style={styles.infoCard} className="fade-in">
           <div style={styles.infoRow}>
