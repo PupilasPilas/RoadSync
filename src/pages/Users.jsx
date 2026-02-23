@@ -7,9 +7,9 @@ import { useUsers } from '../context/UsersContext'
 import { deptNames } from '../data/mockData'
 
 const roleConfig = {
-  admin:      { label: 'Admin',           color: 'var(--accent-red)' },
-  'dept-lead':{ label: 'Jefe de Depto',   color: '#2196F3' },
-  'load-lead':{ label: 'Jefe de Carga',   color: 'var(--accent-yellow)' },
+  admin:       { label: 'Admin',          color: 'var(--accent-red)' },
+  'dept-lead': { label: 'Jefe de Depto',  color: '#2196F3' },
+  'load-lead': { label: 'Jefe de Carga',  color: 'var(--accent-yellow)' },
 }
 
 const depts = Object.entries(deptNames).map(([id, name]) => ({ id, name }))
@@ -21,10 +21,7 @@ const getAvatar = (name = '') => {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
-const suggestId = (name = '') =>
-  name.trim().split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10) || 'usuario'
-
-const EMPTY_FORM = { name: '', role: 'dept-lead', dept: 'audio', loginId: '' }
+const EMPTY_FORM = { name: '', role: 'dept-lead', dept: 'audio', email: '', password: '' }
 
 const styles = {
   section: {
@@ -133,6 +130,8 @@ const styles = {
     fontSize: 15,
     color: 'var(--text)',
     marginBottom: 20,
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
   },
   chips: {
     display: 'flex',
@@ -162,6 +161,7 @@ const styles = {
     fontSize: 15,
     fontWeight: 700,
     color: '#fff',
+    fontFamily: 'inherit',
   },
   btnSecondary: {
     flex: 1,
@@ -171,6 +171,7 @@ const styles = {
     fontSize: 15,
     fontWeight: 600,
     color: 'var(--text-muted)',
+    fontFamily: 'inherit',
   },
   btnDelete: {
     padding: '14px 16px',
@@ -201,32 +202,39 @@ const styles = {
     marginBottom: 12,
     marginTop: -12,
   },
-  idHint: {
-    fontSize: 11,
-    color: 'var(--text-muted)',
-    marginTop: -16,
-    marginBottom: 20,
-  },
 }
 
-function UserModal({ user, onClose, onSave, onDelete, isNew, existingIds, currentUserId }) {
+function UserModal({ user, onClose, onSave, onDelete, isNew, currentUserId }) {
   const [form, setForm] = useState(
-    isNew ? EMPTY_FORM : { name: user.name, role: user.role, dept: user.dept || 'audio', loginId: user.id }
+    isNew
+      ? EMPTY_FORM
+      : { name: user.name, role: user.role, dept: user.dept || 'audio', email: '', password: '' }
   )
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }))
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim()) return setError('El nombre es obligatorio.')
-    if (isNew && !form.loginId.trim()) return setError('El ID de login es obligatorio.')
-    if (isNew && existingIds.includes(form.loginId.trim().toLowerCase())) {
-      return setError('Ese ID de login ya existe.')
-    }
+    if (isNew && !form.email.trim()) return setError('El email es obligatorio.')
+    if (isNew && form.password.length < 6) return setError('La contraseña debe tener al menos 6 caracteres.')
     setError('')
-    const avatar = getAvatar(form.name)
-    const id = isNew ? form.loginId.trim().toLowerCase() : user.id
-    onSave({ id, name: form.name.trim(), role: form.role, dept: form.role === 'dept-lead' ? form.dept : null, avatar })
+    setSaving(true)
+    try {
+      const avatar = getAvatar(form.name)
+      await onSave({
+        ...(isNew ? { email: form.email.trim(), password: form.password } : { id: user.id }),
+        name: form.name.trim(),
+        role: form.role,
+        dept: form.role === 'dept-lead' ? form.dept : null,
+        avatar,
+      })
+    } catch (err) {
+      setError(err.message || 'Error al guardar. Intenta de nuevo.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const roleEntries = Object.entries(roleConfig)
@@ -248,10 +256,7 @@ function UserModal({ user, onClose, onSave, onDelete, isNew, existingIds, curren
           style={styles.input}
           placeholder="Ej. Carlos García"
           value={form.name}
-          onChange={e => {
-            set('name', e.target.value)
-            if (isNew && !form.loginId) set('loginId', suggestId(e.target.value))
-          }}
+          onChange={e => set('name', e.target.value)}
           autoFocus
         />
 
@@ -300,14 +305,25 @@ function UserModal({ user, onClose, onSave, onDelete, isNew, existingIds, curren
 
         {isNew && (
           <>
-            <div style={styles.label}>ID de login</div>
+            <div style={styles.label}>Email</div>
             <input
               style={styles.input}
-              placeholder="Ej. carlos"
-              value={form.loginId}
-              onChange={e => set('loginId', e.target.value.toLowerCase().replace(/\s/g, ''))}
+              type="email"
+              placeholder="usuario@email.com"
+              value={form.email}
+              onChange={e => set('email', e.target.value)}
+              autoComplete="off"
             />
-            <div style={styles.idHint}>Con este ID el usuario selecciona su perfil al iniciar sesión.</div>
+
+            <div style={styles.label}>Contraseña</div>
+            <input
+              style={styles.input}
+              type="password"
+              placeholder="Mínimo 6 caracteres"
+              value={form.password}
+              onChange={e => set('password', e.target.value)}
+              autoComplete="new-password"
+            />
           </>
         )}
 
@@ -320,7 +336,13 @@ function UserModal({ user, onClose, onSave, onDelete, isNew, existingIds, curren
             </button>
           )}
           <button style={styles.btnSecondary} onClick={onClose}>Cancelar</button>
-          <button style={styles.btnPrimary} onClick={handleSave}>Guardar</button>
+          <button
+            style={{ ...styles.btnPrimary, opacity: saving ? 0.7 : 1 }}
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? 'Guardando...' : 'Guardar'}
+          </button>
         </div>
       </div>
     </div>
@@ -330,18 +352,19 @@ function UserModal({ user, onClose, onSave, onDelete, isNew, existingIds, curren
 export default function Users() {
   const { currentUser } = useAuth()
   const { users, addUser, updateUser, deleteUser } = useUsers()
-  const [modal, setModal] = useState(null) // null | { mode: 'add' } | { mode: 'edit', user }
+  const [modal, setModal] = useState(null)
 
-  const existingIds = users.map(u => u.id)
-
-  const handleSave = (data) => {
-    if (modal.mode === 'add') addUser(data)
-    else updateUser(data.id, data)
+  const handleSave = async (data) => {
+    if (modal.mode === 'add') {
+      await addUser(data)
+    } else {
+      await updateUser(data.id, { name: data.name, role: data.role, dept: data.dept, avatar: data.avatar })
+    }
     setModal(null)
   }
 
-  const handleDelete = (id) => {
-    deleteUser(id)
+  const handleDelete = async (id) => {
+    await deleteUser(id)
     setModal(null)
   }
 
@@ -393,7 +416,6 @@ export default function Users() {
         <UserModal
           user={modal.user}
           isNew={modal.mode === 'add'}
-          existingIds={existingIds}
           currentUserId={currentUser?.id}
           onClose={() => setModal(null)}
           onSave={handleSave}
