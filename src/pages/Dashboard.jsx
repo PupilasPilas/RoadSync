@@ -307,7 +307,7 @@ function GlobalDashboard() {
             <div
               key={dept.id}
               style={{ ...styles.deptRow, cursor: 'pointer' }}
-              onClick={() => navigate('/inventory')}
+              onClick={() => navigate('/inventory', { state: { dept: dept.name } })}
             >
               <div style={{ ...styles.deptDot, background: dept.color }} />
               <div style={styles.deptName}>{dept.name}</div>

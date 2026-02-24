@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Search, Plus, Filter, X } from 'lucide-react'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
@@ -275,8 +276,9 @@ export default function Inventory() {
   const { currentUser } = useAuth()
   const { items, addItem } = useItems()
   const role = currentUser?.role
+  const location = useLocation()
   const [search, setSearch] = useState('')
-  const [deptFilter, setDeptFilter] = useState('Todos')
+  const [deptFilter, setDeptFilter] = useState(location.state?.dept || 'Todos')
   const [statusFilter, setStatusFilter] = useState('Todos')
   const [showFilters, setShowFilters] = useState(false)
   const [showModal, setShowModal] = useState(false)
