@@ -84,10 +84,7 @@ export function ItemsProvider({ children }) {
     })
   }
 
-  const addItem = async ({ name, dept, type, icon }) => {
-    const prefixes = { audio: 'AUDIO', video: 'VIDEO', iluminacion: 'ILUM', staging: 'STAG', backline: 'BACK' }
-    const prefix = prefixes[dept] || 'ITEM'
-    const id = `${prefix}-${Date.now()}`
+  const addItem = async ({ id, name, dept, type, icon }) => {
     const order = items.filter(i => i.dept === dept).length + 1
     const newItem = { id, name, dept, type, icon, order, status: 'pending', truck_id: null }
     const { error } = await supabase.from('items').insert(newItem)

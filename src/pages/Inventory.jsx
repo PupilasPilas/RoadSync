@@ -166,18 +166,32 @@ const styles = {
   errorMsg: { fontSize: 12, color: 'var(--accent-red)', marginBottom: 12, marginTop: -12 },
 }
 
+const deptPrefixes = { audio: 'AUDIO', video: 'VIDEO', iluminacion: 'ILUM', staging: 'STAG', backline: 'BACK' }
+
 function ItemModal({ onClose, onSave, defaultDept }) {
-  const [form, setForm] = useState({ name: '', dept: defaultDept || 'audio', type: 'case' })
+  const { items } = useItems()
+
+  const suggestId = (dept) => {
+    const prefix = deptPrefixes[dept] || 'ITEM'
+    const count = items.filter(i => i.dept === dept).length
+    return `${prefix}-${String(count + 1).padStart(2, '0')}`
+  }
+
+  const initDept = defaultDept || 'audio'
+  const [form, setForm] = useState({ name: '', dept: initDept, type: 'case', id: suggestId(initDept) })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }))
+  const setDept = (dept) => setForm(prev => ({ ...prev, dept, id: suggestId(dept) }))
 
   const handleSave = async () => {
+    if (!form.id.trim()) return setError('El código es obligatorio.')
     if (!form.name.trim()) return setError('El nombre es obligatorio.')
     setError('')
     setSaving(true)
     try {
-      await onSave({ name: form.name.trim(), dept: form.dept, type: form.type, icon: typeIconMap[form.type] })
+      await onSave({ id: form.id.trim().toUpperCase(), name: form.name.trim(), dept: form.dept, type: form.type, icon: typeIconMap[form.type] })
     } catch (err) {
       setError(err.message || 'Error al guardar.')
     } finally {
@@ -215,12 +229,20 @@ function ItemModal({ onClose, onSave, defaultDept }) {
                     borderColor: form.dept === id ? 'var(--text)' : 'var(--border)',
                     color: form.dept === id ? 'var(--text)' : 'var(--text-muted)',
                   }}
-                  onClick={() => set('dept', id)}
+                  onClick={() => setDept(id)}
                 >{name}</button>
               ))}
             </div>
           </>
         )}
+
+        <div style={styles.label}>Código</div>
+        <input
+          style={{ ...styles.input, textTransform: 'uppercase', letterSpacing: '1px' }}
+          placeholder="Ej. VIDEO-03"
+          value={form.id}
+          onChange={e => set('id', e.target.value.toUpperCase())}
+        />
 
         <div style={styles.label}>Tipo</div>
         <div style={styles.chips}>
