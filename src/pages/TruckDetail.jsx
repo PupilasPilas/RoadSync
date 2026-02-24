@@ -180,7 +180,9 @@ export default function TruckDetail() {
   const { trucks, updateTruck, deleteTruck } = useTrucks()
   const { items } = useItems()
   const isAdmin = currentUser?.role === 'admin'
-  const canVerify = isAdmin || currentUser?.role === 'load-lead'
+  const isLoadLead = currentUser?.role === 'load-lead'
+  const canVerify = isAdmin || isLoadLead
+  const canEdit = isAdmin || isLoadLead
 
   const truck = trucks.find(t => t.id === id)
   const [showEdit, setShowEdit] = useState(false)
@@ -243,7 +245,7 @@ export default function TruckDetail() {
       <TopBar
         title={truck.name}
         showBack
-        actions={isAdmin ? (
+        actions={canEdit ? (
           <button onClick={openEdit}>
             <Edit2 size={18} color="var(--text-muted)" />
           </button>
