@@ -272,16 +272,21 @@ function ShowInfo() {
 function GlobalDashboard() {
   const { items } = useItems()
   const { trucks } = useTrucks()
+  const { phase } = usePhase()
   const navigate = useNavigate()
 
   const totalItems = items.length
-  const loadedCount = items.filter(i => i.status === 'loaded').length
-  const overallProgress = totalItems > 0 ? Math.round((loadedCount / totalItems) * 100) : 0
+  const progressCount = items.filter(i =>
+    phase === 'Descarga' ? i.status === 'descargado' : i.status === 'loaded'
+  ).length
+  const overallProgress = totalItems > 0 ? Math.round((progressCount / totalItems) * 100) : 0
 
   const deptStats = departments.map(dept => {
     const deptItems = items.filter(i => i.dept === dept.id)
-    const deptLoaded = deptItems.filter(i => i.status === 'loaded').length
-    const progress = deptItems.length > 0 ? Math.round((deptLoaded / deptItems.length) * 100) : 0
+    const deptCount = deptItems.filter(i =>
+      phase === 'Descarga' ? i.status === 'descargado' : i.status === 'loaded'
+    ).length
+    const progress = deptItems.length > 0 ? Math.round((deptCount / deptItems.length) * 100) : 0
     return { ...dept, progress }
   })
 
@@ -328,12 +333,18 @@ function GlobalDashboard() {
 
 function DeptDashboard({ dept }) {
   const { items } = useItems()
+  const { phase } = usePhase()
   const deptItems = items.filter(i => i.dept === dept)
   const pending = deptItems.filter(i => i.status === 'pending').length
   const ready = deptItems.filter(i => i.status === 'ready-to-load').length
   const loaded = deptItems.filter(i => i.status === 'loaded').length
+  const descargado = deptItems.filter(i => i.status === 'descargado').length
   const total = deptItems.length
-  const progress = total > 0 ? Math.round((loaded / total) * 100) : 0
+  const progress = total > 0
+    ? phase === 'Descarga'
+      ? Math.round((descargado / total) * 100)
+      : Math.round((loaded / total) * 100)
+    : 0
 
   return (
     <>
@@ -348,18 +359,33 @@ function DeptDashboard({ dept }) {
       </div>
 
       <div style={styles.counterRow} className="fade-in">
-        <div style={styles.counterCard}>
-          <div style={{ ...styles.counterNum, color: 'var(--status-pending)' }}>{pending}</div>
-          <div style={styles.counterLabel}>Pendiente</div>
-        </div>
-        <div style={styles.counterCard}>
-          <div style={{ ...styles.counterNum, color: 'var(--status-ready)' }}>{ready}</div>
-          <div style={styles.counterLabel}>Listo</div>
-        </div>
-        <div style={styles.counterCard}>
-          <div style={{ ...styles.counterNum, color: 'var(--status-ok)' }}>{loaded}</div>
-          <div style={styles.counterLabel}>Cargado</div>
-        </div>
+        {phase === 'Descarga' ? (
+          <>
+            <div style={styles.counterCard}>
+              <div style={{ ...styles.counterNum, color: 'var(--status-ok)' }}>{loaded}</div>
+              <div style={styles.counterLabel}>En camión</div>
+            </div>
+            <div style={styles.counterCard}>
+              <div style={{ ...styles.counterNum, color: 'var(--accent-red)' }}>{descargado}</div>
+              <div style={styles.counterLabel}>Descargado</div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={styles.counterCard}>
+              <div style={{ ...styles.counterNum, color: 'var(--status-pending)' }}>{pending}</div>
+              <div style={styles.counterLabel}>Pendiente</div>
+            </div>
+            <div style={styles.counterCard}>
+              <div style={{ ...styles.counterNum, color: 'var(--status-ready)' }}>{ready}</div>
+              <div style={styles.counterLabel}>Listo</div>
+            </div>
+            <div style={styles.counterCard}>
+              <div style={{ ...styles.counterNum, color: 'var(--status-ok)' }}>{loaded}</div>
+              <div style={styles.counterLabel}>Cargado</div>
+            </div>
+          </>
+        )}
       </div>
 
       <div style={styles.section} className="fade-in">
