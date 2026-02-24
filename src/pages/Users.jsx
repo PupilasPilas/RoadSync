@@ -212,6 +212,7 @@ function UserModal({ user, onClose, onSave, onDelete, isNew, currentUserId }) {
   )
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }))
 
@@ -329,21 +330,41 @@ function UserModal({ user, onClose, onSave, onDelete, isNew, currentUserId }) {
 
         {error && <div style={styles.errorMsg}>{error}</div>}
 
-        <div style={styles.actions}>
-          {!isNew && user.id !== currentUserId && (
-            <button style={styles.btnDelete} onClick={() => onDelete(user.id)}>
-              <Trash2 size={18} />
+        {confirmDelete ? (
+          <div style={{
+            background: 'rgba(227,6,19,0.08)',
+            border: '1px solid rgba(227,6,19,0.2)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '12px 14px',
+            marginTop: 8,
+          }}>
+            <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 12 }}>
+              ¿Eliminar a <strong>{user.name}</strong>? Esta acción no se puede deshacer.
+            </div>
+            <div style={styles.actions}>
+              <button style={styles.btnSecondary} onClick={() => setConfirmDelete(false)}>Cancelar</button>
+              <button style={{ ...styles.btnPrimary, background: 'var(--accent-red)' }} onClick={() => onDelete(user.id)}>
+                Sí, eliminar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={styles.actions}>
+            {!isNew && user.id !== currentUserId && (
+              <button style={styles.btnDelete} onClick={() => setConfirmDelete(true)}>
+                <Trash2 size={18} />
+              </button>
+            )}
+            <button style={styles.btnSecondary} onClick={onClose}>Cancelar</button>
+            <button
+              style={{ ...styles.btnPrimary, opacity: saving ? 0.7 : 1 }}
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? 'Guardando...' : 'Guardar'}
             </button>
-          )}
-          <button style={styles.btnSecondary} onClick={onClose}>Cancelar</button>
-          <button
-            style={{ ...styles.btnPrimary, opacity: saving ? 0.7 : 1 }}
-            onClick={handleSave}
-            disabled={saving}
-          >
-            {saving ? 'Guardando...' : 'Guardar'}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
