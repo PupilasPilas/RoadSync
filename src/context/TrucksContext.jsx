@@ -44,7 +44,7 @@ export function TrucksProvider({ children }) {
     const loaded = truckItems.filter(i => i.status === 'loaded').length
     const descargado = truckItems.filter(i => i.status === 'descargado').length
     const progress = truck.capacity > 0 ? Math.round((loaded / truck.capacity) * 100) : 0
-    const unloadProgress = truck.capacity > 0 ? Math.round((descargado / truck.capacity) * 100) : 0
+    const unloadProgress = 100 - progress
     return { ...truck, loaded, descargado, progress, unloadProgress }
   })
 

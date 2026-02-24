@@ -276,17 +276,15 @@ function GlobalDashboard() {
   const navigate = useNavigate()
 
   const totalItems = items.length
-  const progressCount = items.filter(i =>
-    phase === 'Descarga' ? i.status === 'descargado' : i.status === 'loaded'
-  ).length
-  const overallProgress = totalItems > 0 ? Math.round((progressCount / totalItems) * 100) : 0
+  const loadedCount = items.filter(i => i.status === 'loaded').length
+  const loadProgress = totalItems > 0 ? Math.round((loadedCount / totalItems) * 100) : 0
+  const overallProgress = phase === 'Descarga' ? 100 - loadProgress : loadProgress
 
   const deptStats = departments.map(dept => {
     const deptItems = items.filter(i => i.dept === dept.id)
-    const deptCount = deptItems.filter(i =>
-      phase === 'Descarga' ? i.status === 'descargado' : i.status === 'loaded'
-    ).length
-    const progress = deptItems.length > 0 ? Math.round((deptCount / deptItems.length) * 100) : 0
+    const deptLoaded = deptItems.filter(i => i.status === 'loaded').length
+    const deptLoadPct = deptItems.length > 0 ? Math.round((deptLoaded / deptItems.length) * 100) : 0
+    const progress = phase === 'Descarga' ? 100 - deptLoadPct : deptLoadPct
     return { ...dept, progress }
   })
 
@@ -340,11 +338,8 @@ function DeptDashboard({ dept }) {
   const loaded = deptItems.filter(i => i.status === 'loaded').length
   const descargado = deptItems.filter(i => i.status === 'descargado').length
   const total = deptItems.length
-  const progress = total > 0
-    ? phase === 'Descarga'
-      ? Math.round((descargado / total) * 100)
-      : Math.round((loaded / total) * 100)
-    : 0
+  const loadPct = total > 0 ? Math.round((loaded / total) * 100) : 0
+  const progress = phase === 'Descarga' ? 100 - loadPct : loadPct
 
   return (
     <>
