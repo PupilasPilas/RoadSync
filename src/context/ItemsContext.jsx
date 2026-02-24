@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from './AuthContext'
 
 const ItemsContext = createContext(null)
 
@@ -14,11 +15,19 @@ const mapEntry = (row) => ({
 })
 
 export function ItemsProvider({ children }) {
+  const { currentUser } = useAuth()
   const [items, setItems] = useState([])
   const [itemHistory, setItemHistory] = useState({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!currentUser) {
+      setItems([])
+      setItemHistory({})
+      setLoading(false)
+      return
+    }
+
     const fetchAll = async () => {
       const [{ data: itemsData }, { data: histData }] = await Promise.all([
         supabase.from('items').select('*').order('order'),
@@ -55,7 +64,7 @@ export function ItemsProvider({ children }) {
       .subscribe()
 
     return () => supabase.removeChannel(channel)
-  }, [])
+  }, [currentUser?.id])
 
   const updateItemStatus = async (itemId, newStatus, truckId = null) => {
     // Optimistic update

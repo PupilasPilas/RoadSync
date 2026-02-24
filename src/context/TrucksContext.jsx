@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useItems } from './ItemsContext'
+import { useAuth } from './AuthContext'
 
 const TrucksContext = createContext(null)
 
@@ -8,10 +9,16 @@ const TrucksContext = createContext(null)
 const mapTruck = (row) => ({ ...row, assignedTo: row.assigned_to })
 
 export function TrucksProvider({ children }) {
+  const { currentUser } = useAuth()
   const [rawTrucks, setRawTrucks] = useState([])
   const { items } = useItems()
 
   useEffect(() => {
+    if (!currentUser) {
+      setRawTrucks([])
+      return
+    }
+
     supabase.from('trucks').select('*').order('id')
       .then(({ data }) => { if (data) setRawTrucks(data.map(mapTruck)) })
 
@@ -29,7 +36,7 @@ export function TrucksProvider({ children }) {
       .subscribe()
 
     return () => supabase.removeChannel(channel)
-  }, [])
+  }, [currentUser?.id])
 
   // Compute loaded count and progress from items
   const trucks = rawTrucks.map(truck => {
