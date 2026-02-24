@@ -8,6 +8,7 @@ import Scan from './pages/Scan'
 import Trucks from './pages/Trucks'
 import TruckDetail from './pages/TruckDetail'
 import Users from './pages/Users'
+import AdminItems from './pages/AdminItems'
 
 function RoleRoute({ children, allowedRoles }) {
   const { currentUser, loading } = useAuth()
@@ -30,6 +31,7 @@ export default function App() {
       <Route path="/trucks" element={<RoleRoute allowedRoles={['admin', 'load-lead']}><Trucks /></RoleRoute>} />
       <Route path="/truck/:id" element={<RoleRoute allowedRoles={['admin', 'load-lead']}><TruckDetail /></RoleRoute>} />
       <Route path="/users" element={<RoleRoute allowedRoles={['admin']}><Users /></RoleRoute>} />
+      <Route path="/admin/items" element={<RoleRoute allowedRoles={['admin']}><AdminItems /></RoleRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

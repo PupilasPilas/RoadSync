@@ -93,12 +93,51 @@ export function ItemsProvider({ children }) {
     })
   }
 
-  const addItem = async ({ id, name, dept, type, icon }) => {
-    const order = items.filter(i => i.dept === dept).length + 1
-    const newItem = { id, name, dept, type, icon, order, status: 'descargado', truck_id: null }
+  const addItem = async ({ id, name, dept, type, icon, truck = null, order: orderParam = null, status = 'descargado' }) => {
+    const order = orderParam !== null ? orderParam : items.filter(i => i.dept === dept).length + 1
+    const newItem = { id, name, dept, type, icon, order, status, truck_id: truck }
     const { error } = await supabase.from('items').insert(newItem)
     if (error) throw error
-    // El realtime INSERT actualiza el estado — no hacer update optimista para evitar duplicados
+  }
+
+  const updateItem = async (itemId, updates) => {
+    const { id: _id, ...rest } = updates
+    const dbUpdates = { ...rest }
+    if ('truck' in dbUpdates) {
+      dbUpdates.truck_id = dbUpdates.truck || null
+      delete dbUpdates.truck
+    }
+    setItems(prev => prev.map(i => i.id === itemId ? { ...i, ...rest } : i))
+    await supabase.from('items').update(dbUpdates).eq('id', itemId)
+  }
+
+  const deleteItem = async (itemId) => {
+    setItems(prev => prev.filter(i => i.id !== itemId))
+    await supabase.from('items').delete().eq('id', itemId)
+  }
+
+  const importItems = async (newItems) => {
+    const existingIds = new Set(items.map(i => i.id.toUpperCase()))
+    const toAdd = newItems.filter(i => !existingIds.has(i.id.toUpperCase()))
+    if (toAdd.length === 0) return { imported: 0, skipped: newItems.length }
+    const dbRows = toAdd.map(item => ({
+      id: item.id,
+      name: item.name,
+      dept: item.dept,
+      type: item.type || 'case',
+      icon: item.icon || 'Box',
+      order: Number(item.order) || 0,
+      status: 'descargado',
+      truck_id: item.truck || null,
+    }))
+    // Optimistic update
+    setItems(prev => [...prev, ...dbRows.map(row => ({ ...row, truck: row.truck_id }))])
+    const { error } = await supabase.from('items').insert(dbRows)
+    if (error) {
+      setItems(prev => prev.filter(i => !dbRows.some(r => r.id === i.id)))
+      throw error
+    }
+    return { imported: toAdd.length, skipped: newItems.length - toAdd.length }
   }
 
   const resetItems = async () => {
@@ -116,7 +155,7 @@ export function ItemsProvider({ children }) {
   }
 
   return (
-    <ItemsContext.Provider value={{ items, loading, updateItemStatus, addItem, resetItems, itemHistory, addHistoryEntry }}>
+    <ItemsContext.Provider value={{ items, loading, updateItemStatus, addItem, updateItem, deleteItem, importItems, resetItems, itemHistory, addHistoryEntry }}>
       {children}
     </ItemsContext.Provider>
   )

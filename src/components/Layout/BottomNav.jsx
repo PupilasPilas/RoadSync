@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { LayoutGrid, Box, ScanLine, Truck, Users } from 'lucide-react'
+import { LayoutGrid, Box, ScanLine, Truck, Users, Settings } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
 const tabsByRole = {
@@ -8,6 +8,7 @@ const tabsByRole = {
     { path: '/inventory', icon: Box, label: 'Inventario' },
     { path: '/trucks', icon: Truck, label: 'Camiones' },
     { path: '/users', icon: Users, label: 'Usuarios' },
+    { path: '/admin/items', icon: Settings, label: 'Gestión' },
   ],
   'dept-lead': [
     { path: '/dashboard', icon: LayoutGrid, label: 'Dashboard' },
