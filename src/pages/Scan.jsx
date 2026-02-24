@@ -275,7 +275,7 @@ export default function Scan() {
     } else if (isDeptLead) {
       if (item.dept !== currentUser.dept) {
         result = { type: 'error', itemId: item.id, itemName: item.name, message: 'Error: este ítem no pertenece a tu departamento' }
-      } else if (item.status !== 'pending') {
+      } else if (item.status !== 'descargado') {
         result = { type: 'error', itemId: item.id, itemName: item.name, message: `El ítem ya está en estado: ${item.status}` }
       } else {
         updateItemStatus(item.id, 'ready-to-load')

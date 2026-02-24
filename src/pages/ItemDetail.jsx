@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { Hash, Layers, Clock, Edit2, AlertTriangle, CheckCircle } from 'lucide-react'
+import { Hash, Layers, Clock, Edit2 } from 'lucide-react'
 import QRCodeLib from 'qrcode'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
@@ -194,7 +194,6 @@ export default function ItemDetail() {
   const { users } = useUsers()
   const item = items.find(i => i.id === id)
   const role = currentUser?.role
-  const [confirmAction, setConfirmAction] = useState(false)
 
   const getUserName = (userId) => {
     const user = users.find(u => u.id === userId)
@@ -219,18 +218,6 @@ export default function ItemDetail() {
   const now = () => {
     const d = new Date()
     return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
-  }
-
-  const handleMarkMissing = () => {
-    updateItemStatus(item.id, 'missing')
-    addHistoryEntry(item.id, { action: 'Marcado como faltante', userId: currentUser.id, time: now() })
-    setConfirmAction(false)
-  }
-
-  const handleMarkFound = () => {
-    updateItemStatus(item.id, 'pending')
-    addHistoryEntry(item.id, { action: 'Marcado como encontrado', userId: currentUser.id, time: now() })
-    setConfirmAction(false)
   }
 
   return (
@@ -267,43 +254,6 @@ export default function ItemDetail() {
         </div>
 
         <AnnotationsList type="item" entityId={item.id} />
-
-        {item.status !== 'descargado' && (
-          <div style={{ marginBottom: 20 }} className="fade-in">
-            {!confirmAction ? (
-              item.status === 'missing' ? (
-                <button
-                  style={{ ...styles.actionBtn, background: 'rgba(0,200,83,0.12)', color: 'var(--status-ok)', border: '1px solid rgba(0,200,83,0.25)' }}
-                  onClick={() => setConfirmAction(true)}
-                >
-                  <CheckCircle size={16} />
-                  Marcar como encontrado
-                </button>
-              ) : (
-                <button
-                  style={{ ...styles.actionBtn, background: 'rgba(227,6,19,0.08)', color: 'var(--status-error)', border: '1px solid rgba(227,6,19,0.2)' }}
-                  onClick={() => setConfirmAction(true)}
-                >
-                  <AlertTriangle size={16} />
-                  Marcar como faltante
-                </button>
-              )
-            ) : (
-              <div style={styles.confirmRow}>
-                <span style={styles.confirmText}>
-                  {item.status === 'missing' ? '¿Marcar como encontrado?' : '¿Marcar como faltante?'}
-                </span>
-                <button style={styles.confirmNo} onClick={() => setConfirmAction(false)}>No</button>
-                <button
-                  style={styles.confirmYes}
-                  onClick={item.status === 'missing' ? handleMarkFound : handleMarkMissing}
-                >
-                  Sí
-                </button>
-              </div>
-            )}
-          </div>
-        )}
 
         <div className="fade-in">
           <div style={styles.sectionTitle}>

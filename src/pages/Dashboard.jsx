@@ -333,10 +333,9 @@ function DeptDashboard({ dept }) {
   const { items } = useItems()
   const { phase } = usePhase()
   const deptItems = items.filter(i => i.dept === dept)
-  const pending = deptItems.filter(i => i.status === 'pending').length
+  const descargado = deptItems.filter(i => i.status === 'descargado').length
   const ready = deptItems.filter(i => i.status === 'ready-to-load').length
   const loaded = deptItems.filter(i => i.status === 'loaded').length
-  const descargado = deptItems.filter(i => i.status === 'descargado').length
   const total = deptItems.length
   const loadPct = total > 0 ? Math.round((loaded / total) * 100) : 0
   const progress = phase === 'Descarga' ? 100 - loadPct : loadPct
@@ -358,22 +357,22 @@ function DeptDashboard({ dept }) {
           <>
             <div style={styles.counterCard}>
               <div style={{ ...styles.counterNum, color: 'var(--status-ok)' }}>{loaded}</div>
-              <div style={styles.counterLabel}>En camión</div>
+              <div style={styles.counterLabel}>Cargado</div>
             </div>
             <div style={styles.counterCard}>
-              <div style={{ ...styles.counterNum, color: 'var(--accent-red)' }}>{descargado}</div>
+              <div style={{ ...styles.counterNum, color: 'var(--text-muted)' }}>{descargado}</div>
               <div style={styles.counterLabel}>Descargado</div>
             </div>
           </>
         ) : (
           <>
             <div style={styles.counterCard}>
-              <div style={{ ...styles.counterNum, color: 'var(--status-pending)' }}>{pending}</div>
-              <div style={styles.counterLabel}>Pendiente</div>
+              <div style={{ ...styles.counterNum, color: 'var(--text-muted)' }}>{descargado}</div>
+              <div style={styles.counterLabel}>Descargado</div>
             </div>
             <div style={styles.counterCard}>
               <div style={{ ...styles.counterNum, color: 'var(--status-ready)' }}>{ready}</div>
-              <div style={styles.counterLabel}>Listo</div>
+              <div style={styles.counterLabel}>Listo para cargar</div>
             </div>
             <div style={styles.counterCard}>
               <div style={{ ...styles.counterNum, color: 'var(--status-ok)' }}>{loaded}</div>

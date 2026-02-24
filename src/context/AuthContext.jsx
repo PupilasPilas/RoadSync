@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
+const PROFILE_CACHE_KEY = 'roadsync_profile'
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null)
@@ -12,8 +13,18 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session) {
-          setUserId(session.user.id)   // inmediato — libera los providers
-          await fetchUserProfile(session.user.id)
+          setUserId(session.user.id)
+          // Mostrar inmediatamente desde caché si existe
+          const cached = localStorage.getItem(PROFILE_CACHE_KEY)
+          if (cached) {
+            const profile = JSON.parse(cached)
+            if (profile.id === session.user.id) {
+              setCurrentUser(profile)
+              setLoading(false)
+            }
+          }
+          // Actualizar desde Supabase en segundo plano
+          fetchUserProfile(session.user.id)
         } else {
           setUserId(null)
           setCurrentUser(null)
@@ -24,13 +35,16 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const fetchUserProfile = async (userId) => {
+  const fetchUserProfile = async (uid) => {
     const { data } = await supabase
       .from('users')
       .select('*')
-      .eq('id', userId)
+      .eq('id', uid)
       .single()
-    if (data) setCurrentUser(data)
+    if (data) {
+      localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(data))
+      setCurrentUser(data)
+    }
     setLoading(false)
   }
 
@@ -40,6 +54,7 @@ export function AuthProvider({ children }) {
   }
 
   const logout = async () => {
+    localStorage.removeItem(PROFILE_CACHE_KEY)
     await supabase.auth.signOut()
   }
 

@@ -12,14 +12,12 @@ const typeLabels = { case: 'Case', rack: 'Rack', consola: 'Consola', otro: 'Otro
 const deptEntries = Object.entries(deptNames)
 
 const allDeptFilters = ['Todos', ...Object.values(deptNames)]
-const statusFilters = ['Todos', 'Cargado', 'Descargado', 'Listo para cargar', 'Pendiente', 'Faltante']
+const statusFilters = ['Todos', 'Cargado', 'Listo para cargar', 'Descargado']
 
 const statusFilterMap = {
   'Cargado': 'loaded',
-  'Descargado': 'descargado',
   'Listo para cargar': 'ready-to-load',
-  'Pendiente': 'pending',
-  'Faltante': 'missing',
+  'Descargado': 'descargado',
 }
 
 const deptFilterMap = Object.fromEntries(

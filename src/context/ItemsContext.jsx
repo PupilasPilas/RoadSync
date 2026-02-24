@@ -95,7 +95,7 @@ export function ItemsProvider({ children }) {
 
   const addItem = async ({ id, name, dept, type, icon }) => {
     const order = items.filter(i => i.dept === dept).length + 1
-    const newItem = { id, name, dept, type, icon, order, status: 'pending', truck_id: null }
+    const newItem = { id, name, dept, type, icon, order, status: 'descargado', truck_id: null }
     const { error } = await supabase.from('items').insert(newItem)
     if (error) throw error
     // El realtime INSERT actualiza el estado — no hacer update optimista para evitar duplicados

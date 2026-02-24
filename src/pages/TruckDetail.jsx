@@ -200,7 +200,7 @@ export default function TruckDetail() {
 
   const truckItems = items.filter(i => i.truck === truck.id)
   const loadedItems = truckItems.filter(i => i.status === 'loaded').length
-  const missingItems = truckItems.filter(i => ['missing', 'pending', 'ready-to-load'].includes(i.status))
+  const missingItems = truckItems.filter(i => ['descargado', 'ready-to-load'].includes(i.status))
   const progress = truckItems.length > 0 ? Math.round((loadedItems / truckItems.length) * 100) : truck.progress
   const st = statusMap[truck.status]
 
@@ -273,7 +273,7 @@ export default function TruckDetail() {
               <div style={{ ...styles.statNum, color: missingItems.length > 0 ? 'var(--status-error)' : 'var(--status-ok)' }}>
                 {missingItems.length}
               </div>
-              <div style={styles.statLabel}>Faltantes</div>
+              <div style={styles.statLabel}>Sin cargar</div>
             </div>
             <div style={styles.stat}>
               <div style={styles.statNum}>{truck.capacity}</div>
@@ -285,7 +285,7 @@ export default function TruckDetail() {
         {missingItems.length > 0 && (
           <div style={styles.missing} className="fade-in">
             <AlertTriangle size={16} />
-            {missingItems.length} ítem(s) pendientes de carga
+            {missingItems.length} ítem(s) sin cargar
           </div>
         )}
 

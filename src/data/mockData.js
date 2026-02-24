@@ -61,14 +61,14 @@ export const items = [
   { id: 'AUDIO-05', name: 'Line Array K2 x12', dept: 'audio', type: 'case', truck: 'truck-01', order: 5, status: 'loaded', icon: 'Speaker' },
   { id: 'AUDIO-06', name: 'Rack Monitor', dept: 'audio', type: 'rack', truck: 'truck-01', order: 6, status: 'ready-to-load', icon: 'Server' },
   { id: 'AUDIO-07', name: 'Rack Amplificadores', dept: 'audio', type: 'rack', truck: 'truck-01', order: 7, status: 'ready-to-load', icon: 'Server' },
-  { id: 'AUDIO-08', name: 'Case Microfonía', dept: 'audio', type: 'case', truck: 'truck-01', order: 8, status: 'pending', icon: 'Mic' },
+  { id: 'AUDIO-08', name: 'Case Microfonía', dept: 'audio', type: 'case', truck: 'truck-01', order: 8, status: 'descargado', icon: 'Mic' },
   { id: 'VIDEO-01', name: 'Pantalla LED P3.9 #1', dept: 'video', type: 'case', truck: 'truck-01', order: 9, status: 'loaded', icon: 'Monitor' },
   { id: 'VIDEO-02', name: 'Pantalla LED P3.9 #2', dept: 'video', type: 'case', truck: 'truck-01', order: 10, status: 'loaded', icon: 'Monitor' },
-  { id: 'VIDEO-03', name: 'Case Procesadores Video', dept: 'video', type: 'case', truck: 'truck-01', order: 11, status: 'missing', icon: 'Cpu' },
+  { id: 'VIDEO-03', name: 'Case Procesadores Video', dept: 'video', type: 'case', truck: 'truck-01', order: 11, status: 'descargado', icon: 'Cpu' },
   { id: 'VIDEO-04', name: 'Rack Señal Video', dept: 'video', type: 'rack', truck: 'truck-01', order: 12, status: 'loaded', icon: 'Server' },
   { id: 'VIDEO-05', name: 'Case Cámaras PTZ', dept: 'video', type: 'case', truck: 'truck-01', order: 13, status: 'loaded', icon: 'Camera' },
   { id: 'VIDEO-06', name: 'Switcher ATEM 4K', dept: 'video', type: 'consola', truck: 'truck-01', order: 14, status: 'ready-to-load', icon: 'Sliders' },
-  { id: 'VIDEO-07', name: 'Case Cableado Video', dept: 'video', type: 'case', truck: 'truck-01', order: 15, status: 'pending', icon: 'Cable' },
+  { id: 'VIDEO-07', name: 'Case Cableado Video', dept: 'video', type: 'case', truck: 'truck-01', order: 15, status: 'descargado', icon: 'Cable' },
   { id: 'VIDEO-08', name: 'Monitores Referencia x4', dept: 'video', type: 'case', truck: 'truck-01', order: 16, status: 'loaded', icon: 'Monitor' },
   { id: 'ILUM-01', name: 'Case Moving Head x8', dept: 'iluminacion', type: 'case', truck: 'truck-02', order: 1, status: 'loaded', icon: 'Lightbulb' },
   { id: 'ILUM-02', name: 'Case Wash LED x12', dept: 'iluminacion', type: 'case', truck: 'truck-02', order: 2, status: 'loaded', icon: 'Lightbulb' },
@@ -79,11 +79,11 @@ export const items = [
   { id: 'STAG-01', name: 'Truss Circular 12m', dept: 'staging', type: 'case', truck: 'truck-02', order: 7, status: 'loaded', icon: 'Box' },
   { id: 'STAG-02', name: 'Case Motores CM x8', dept: 'staging', type: 'case', truck: 'truck-02', order: 8, status: 'loaded', icon: 'Settings' },
   { id: 'STAG-03', name: 'Risers 2x1m x6', dept: 'staging', type: 'case', truck: 'truck-02', order: 9, status: 'ready-to-load', icon: 'Box' },
-  { id: 'STAG-04', name: 'Case Herrajes Staging', dept: 'staging', type: 'case', truck: 'truck-02', order: 10, status: 'pending', icon: 'Wrench' },
+  { id: 'STAG-04', name: 'Case Herrajes Staging', dept: 'staging', type: 'case', truck: 'truck-02', order: 10, status: 'descargado', icon: 'Wrench' },
   { id: 'BACK-01', name: 'Case Guitarras', dept: 'backline', type: 'case', truck: 'truck-03', order: 1, status: 'loaded', icon: 'Guitar' },
   { id: 'BACK-02', name: 'Case Bajos + Amps', dept: 'backline', type: 'case', truck: 'truck-03', order: 2, status: 'loaded', icon: 'Guitar' },
   { id: 'BACK-03', name: 'Case Teclados', dept: 'backline', type: 'case', truck: 'truck-03', order: 3, status: 'ready-to-load', icon: 'Piano' },
-  { id: 'BACK-04', name: 'Case Batería', dept: 'backline', type: 'case', truck: 'truck-03', order: 4, status: 'pending', icon: 'Disc' },
+  { id: 'BACK-04', name: 'Case Batería', dept: 'backline', type: 'case', truck: 'truck-03', order: 4, status: 'descargado', icon: 'Disc' },
 ]
 
 export const scanHistory = [
@@ -105,19 +105,13 @@ export const movementHistory = {
 export const statusLabels = {
   loaded: 'Cargado',
   'ready-to-load': 'Listo para cargar',
-  pending: 'Pendiente',
-  missing: 'Faltante',
-  'wrong-truck': 'Camión incorrecto',
   descargado: 'Descargado',
 }
 
 export const statusColors = {
   loaded: 'var(--status-ok)',
   'ready-to-load': 'var(--status-ready)',
-  pending: 'var(--status-pending)',
-  missing: 'var(--status-error)',
-  'wrong-truck': 'var(--accent-yellow)',
-  descargado: 'var(--status-ok)',
+  descargado: 'var(--text-muted)',
 }
 
 export const deptColors = {
