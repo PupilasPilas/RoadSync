@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { Hash, Layers, Clock, Edit2, Truck, AlertTriangle, CheckCircle } from 'lucide-react'
+import { Hash, Layers, Clock, Edit2, Truck, AlertTriangle, CheckCircle, X } from 'lucide-react'
 import QRCodeLib from 'qrcode'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
@@ -10,7 +10,7 @@ import { useAuth } from '../context/AuthContext'
 import { useItems } from '../context/ItemsContext'
 import { useUsers } from '../context/UsersContext'
 import { useTrucks } from '../context/TrucksContext'
-import { deptNames, deptColors } from '../data/mockData'
+import { deptNames, deptColors, statusLabels, statusColors } from '../data/mockData'
 
 const styles = {
   header: {
@@ -196,6 +196,7 @@ export default function ItemDetail() {
   const { trucks } = useTrucks()
   const item = items.find(i => i.id === id)
   const role = currentUser?.role
+  const [showEdit, setShowEdit] = useState(false)
 
   const getUserName = (userId) => {
     const user = users.find(u => u.id === userId)
@@ -214,7 +215,7 @@ export default function ItemDetail() {
     )
   }
 
-  const canEdit = role === 'admin' || (role === 'dept-lead' && item.dept === currentUser.dept)
+  const canEdit = role === 'admin' || role === 'load-lead'
   const history = itemHistory[item.id] || []
 
   const now = () => {
@@ -228,7 +229,7 @@ export default function ItemDetail() {
         title={item.id}
         showBack
         actions={canEdit ? (
-          <button>
+          <button onClick={() => setShowEdit(true)}>
             <Edit2 size={18} color="var(--text-muted)" />
           </button>
         ) : undefined}
@@ -332,6 +333,54 @@ export default function ItemDetail() {
           )}
         </div>
       </div>
+      {showEdit && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+          onClick={() => setShowEdit(false)}
+        >
+          <div
+            style={{ background: 'var(--surface)', borderRadius: '20px 20px 0 0', border: '1px solid var(--border)', borderBottom: 'none', width: '100%', maxWidth: 640, padding: '24px 24px 40px', animation: 'fadeIn 0.2s ease-out' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <span style={{ fontSize: 17, fontWeight: 700 }}>Cambiar estado</span>
+              <button onClick={() => setShowEdit(false)}><X size={22} color="var(--text-muted)" /></button>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' }}>
+              Estado actual: <span style={{ color: statusColors[item.status] }}>{statusLabels[item.status]}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {Object.entries(statusLabels).map(([key, label]) => {
+                const color = statusColors[key]
+                const isActive = item.status === key
+                return (
+                  <button
+                    key={key}
+                    disabled={isActive}
+                    style={{
+                      padding: '13px 16px', borderRadius: 'var(--radius)', fontSize: 14, fontWeight: 600,
+                      textAlign: 'left', border: `1.5px solid ${isActive ? color : 'var(--border)'}`,
+                      background: isActive ? `${color}22` : 'transparent',
+                      color: isActive ? color : 'var(--text-muted)',
+                      cursor: isActive ? 'default' : 'pointer',
+                      opacity: isActive ? 1 : 0.85,
+                    }}
+                    onClick={() => {
+                      if (isActive) return
+                      updateItemStatus(item.id, key)
+                      addHistoryEntry(item.id, { action: `Estado cambiado a: ${label}`, userId: currentUser.id, time: now() })
+                      setShowEdit(false)
+                    }}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       <BottomNav />
     </>
   )
