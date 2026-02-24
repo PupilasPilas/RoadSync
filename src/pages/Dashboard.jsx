@@ -332,7 +332,8 @@ function GlobalDashboard() {
 function DeptDashboard({ dept }) {
   const { items } = useItems()
   const { phase } = usePhase()
-  const deptItems = items.filter(i => i.dept === dept)
+  const statusOrder = { descargado: 0, 'ready-to-load': 1, missing: 2, loaded: 3 }
+  const deptItems = items.filter(i => i.dept === dept).sort((a, b) => (statusOrder[a.status] ?? 4) - (statusOrder[b.status] ?? 4))
   const descargado = deptItems.filter(i => i.status === 'descargado').length
   const ready = deptItems.filter(i => i.status === 'ready-to-load').length
   const loaded = deptItems.filter(i => i.status === 'loaded').length
