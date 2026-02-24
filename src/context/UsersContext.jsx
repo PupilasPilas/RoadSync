@@ -41,7 +41,7 @@ export function UsersProvider({ children }) {
 
   const deleteUser = async (id) => {
     setUsers(prev => prev.filter(u => u.id !== id))
-    await supabase.from('users').delete().eq('id', id)
+    await supabase.rpc('delete_user', { user_id: id })
   }
 
   return (
