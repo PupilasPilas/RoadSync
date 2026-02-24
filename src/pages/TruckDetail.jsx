@@ -183,6 +183,7 @@ export default function TruckDetail() {
 
   const truck = trucks.find(t => t.id === id)
   const [showEdit, setShowEdit] = useState(false)
+  const [showVerify, setShowVerify] = useState(false)
   const [form, setForm] = useState(null)
   const [error, setError] = useState('')
 
@@ -227,6 +228,11 @@ export default function TruckDetail() {
   const handleDelete = () => {
     deleteTruck(truck.id)
     navigate('/trucks', { replace: true })
+  }
+
+  const handleVerifyConfirm = () => {
+    updateTruck(truck.id, { status: 'complete' })
+    setShowVerify(false)
   }
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }))
@@ -289,8 +295,8 @@ export default function TruckDetail() {
           </div>
         )}
 
-        {isAdmin && (
-          <button style={styles.verifyBtn}>
+        {isAdmin && truck.status === 'open' && (
+          <button style={styles.verifyBtn} onClick={() => setShowVerify(true)}>
             <CheckCircle size={18} />
             Verificar carga completa
           </button>
@@ -366,6 +372,45 @@ export default function TruckDetail() {
               </button>
               <button style={styles.btnSecondary} onClick={() => setShowEdit(false)}>Cancelar</button>
               <button style={styles.btnPrimary} onClick={handleSave}>Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showVerify && (
+        <div style={styles.overlay} onClick={() => setShowVerify(false)}>
+          <div style={styles.modal} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <span style={styles.modalTitle}>Verificar carga completa</span>
+              <button onClick={() => setShowVerify(false)}><X size={22} color="var(--text-muted)" /></button>
+            </div>
+
+            {missingItems.length > 0 ? (
+              <div style={{ ...styles.missing, marginBottom: 20 }}>
+                <AlertTriangle size={16} />
+                {missingItems.length} ítem(s) aún sin cargar. ¿Deseas marcar el camión como completo de todas formas?
+              </div>
+            ) : (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 14px',
+                background: 'rgba(0,200,100,0.1)',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid rgba(0,200,100,0.2)',
+                marginBottom: 20,
+                fontSize: 13,
+                color: 'var(--status-ok)',
+              }}>
+                <CheckCircle size={16} />
+                Todos los ítems están cargados. Listo para marcar como completo.
+              </div>
+            )}
+
+            <div style={styles.actions}>
+              <button style={styles.btnSecondary} onClick={() => setShowVerify(false)}>Cancelar</button>
+              <button style={styles.btnPrimary} onClick={handleVerifyConfirm}>Confirmar</button>
             </div>
           </div>
         </div>
