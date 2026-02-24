@@ -5,17 +5,17 @@ import { useAuth } from './AuthContext'
 const UsersContext = createContext(null)
 
 export function UsersProvider({ children }) {
-  const { currentUser } = useAuth()
+  const { userId } = useAuth()
   const [users, setUsers] = useState([])
 
   useEffect(() => {
-    if (!currentUser) {
+    if (!userId) {
       setUsers([])
       return
     }
     supabase.from('users').select('*')
       .then(({ data }) => { if (data) setUsers(data) })
-  }, [currentUser?.id])
+  }, [userId])
 
   const addUser = async ({ email, password, name, role, dept, avatar }) => {
     // Usa función SQL con SECURITY DEFINER — crea auth user + perfil sin enviar emails

@@ -9,12 +9,12 @@ const TrucksContext = createContext(null)
 const mapTruck = (row) => ({ ...row, assignedTo: row.assigned_to })
 
 export function TrucksProvider({ children }) {
-  const { currentUser } = useAuth()
+  const { userId } = useAuth()
   const [rawTrucks, setRawTrucks] = useState([])
   const { items } = useItems()
 
   useEffect(() => {
-    if (!currentUser) {
+    if (!userId) {
       setRawTrucks([])
       return
     }
@@ -36,7 +36,7 @@ export function TrucksProvider({ children }) {
       .subscribe()
 
     return () => supabase.removeChannel(channel)
-  }, [currentUser?.id])
+  }, [userId])
 
   // Compute loaded count and progress from items
   const trucks = rawTrucks.map(truck => {

@@ -5,14 +5,17 @@ const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null)
+  const [userId, setUserId] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session) {
+          setUserId(session.user.id)   // inmediato — libera los providers
           await fetchUserProfile(session.user.id)
         } else {
+          setUserId(null)
           setCurrentUser(null)
           setLoading(false)
         }
@@ -41,7 +44,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ currentUser, loading, login, logout }}>
+    <AuthContext.Provider value={{ currentUser, userId, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

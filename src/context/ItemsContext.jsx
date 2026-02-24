@@ -15,13 +15,13 @@ const mapEntry = (row) => ({
 })
 
 export function ItemsProvider({ children }) {
-  const { currentUser } = useAuth()
+  const { userId } = useAuth()
   const [items, setItems] = useState([])
   const [itemHistory, setItemHistory] = useState({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!currentUser) {
+    if (!userId) {
       setItems([])
       setItemHistory({})
       setLoading(false)
@@ -64,7 +64,7 @@ export function ItemsProvider({ children }) {
       .subscribe()
 
     return () => supabase.removeChannel(channel)
-  }, [currentUser?.id])
+  }, [userId])
 
   const updateItemStatus = async (itemId, newStatus, truckId = null) => {
     // Optimistic update
