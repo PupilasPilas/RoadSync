@@ -269,6 +269,39 @@ function ShowInfo() {
   )
 }
 
+function MissingAlert({ items, navigate }) {
+  const missing = items.filter(i => i.status === 'missing')
+  if (missing.length === 0) return null
+
+  const byDept = missing.reduce((acc, i) => {
+    acc[i.dept] = (acc[i.dept] || 0) + 1
+    return acc
+  }, {})
+
+  return (
+    <div
+      className="fade-in"
+      style={{
+        display: 'flex', alignItems: 'flex-start', gap: 12,
+        padding: '12px 14px', marginBottom: 16, cursor: 'pointer',
+        background: 'rgba(255,171,0,0.08)', borderRadius: 'var(--radius)',
+        border: '1px solid rgba(255,171,0,0.25)',
+      }}
+      onClick={() => navigate('/inventory', { state: { status: 'Faltante' } })}
+    >
+      <AlertTriangle size={18} color="var(--accent-yellow)" style={{ flexShrink: 0, marginTop: 1 }} />
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent-yellow)', marginBottom: 4 }}>
+          {missing.length} ítem{missing.length > 1 ? 's' : ''} faltante{missing.length > 1 ? 's' : ''}
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+          {Object.entries(byDept).map(([dept, count]) => `${deptNames[dept]}: ${count}`).join(' · ')}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function GlobalDashboard() {
   const { items } = useItems()
   const { trucks } = useTrucks()
@@ -299,6 +332,8 @@ function GlobalDashboard() {
         </div>
         <ProgressBar progress={overallProgress} height={10} />
       </div>
+
+      <MissingAlert items={items} navigate={navigate} />
 
       <div style={styles.section} className="fade-in">
         <div style={styles.sectionTitle}>Por Departamento</div>

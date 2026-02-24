@@ -13,12 +13,13 @@ const typeLabels = { case: 'Case', rack: 'Rack', consola: 'Consola', otro: 'Otro
 const deptEntries = Object.entries(deptNames)
 
 const allDeptFilters = ['Todos', ...Object.values(deptNames)]
-const statusFilters = ['Todos', 'Cargado', 'Listo para cargar', 'Descargado']
+const statusFilters = ['Todos', 'Cargado', 'Listo para cargar', 'Descargado', 'Faltante']
 
 const statusFilterMap = {
   'Cargado': 'loaded',
   'Listo para cargar': 'ready-to-load',
   'Descargado': 'descargado',
+  'Faltante': 'missing',
 }
 
 const deptFilterMap = Object.fromEntries(
@@ -279,8 +280,8 @@ export default function Inventory() {
   const location = useLocation()
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState(location.state?.dept || 'Todos')
-  const [statusFilter, setStatusFilter] = useState('Todos')
-  const [showFilters, setShowFilters] = useState(false)
+  const [statusFilter, setStatusFilter] = useState(location.state?.status || 'Todos')
+  const [showFilters, setShowFilters] = useState(!!location.state?.status)
   const [showModal, setShowModal] = useState(false)
 
   const isDeptLead = role === 'dept-lead'
