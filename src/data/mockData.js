@@ -106,12 +106,14 @@ export const statusLabels = {
   loaded: 'Cargado',
   'ready-to-load': 'Listo para cargar',
   descargado: 'Descargado',
+  missing: 'Faltante',
 }
 
 export const statusColors = {
   loaded: 'var(--status-ok)',
   'ready-to-load': 'var(--status-ready)',
   descargado: 'var(--text-muted)',
+  missing: 'var(--accent-yellow)',
 }
 
 export const deptColors = {

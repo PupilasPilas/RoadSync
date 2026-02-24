@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { ScanLine, Check, X, Truck, ChevronDown, StopCircle, Keyboard } from 'lucide-react'
+import { ScanLine, Check, X, Truck, ChevronDown, StopCircle, Keyboard, AlertTriangle, CheckCircle } from 'lucide-react'
 import { Html5Qrcode } from 'html5-qrcode'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
@@ -238,6 +238,7 @@ export default function Scan() {
   const [showTruckDropdown, setShowTruckDropdown] = useState(false)
   const [manualCode, setManualCode] = useState('')
   const [showManual, setShowManual] = useState(false)
+  const [scannedItemId, setScannedItemId] = useState(null)
   const html5QrcodeRef = useRef(null)
 
   const isLoadLead = role === 'load-lead'
@@ -260,6 +261,7 @@ export default function Scan() {
     const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
 
     const item = items.find(i => i.id === trimmed)
+    setScannedItemId(item?.id || null)
     let result
 
     if (!item) {
@@ -310,8 +312,27 @@ export default function Scan() {
     }
   }
 
+  const scannedItem = scannedItemId ? items.find(i => i.id === scannedItemId) : null
+  const canMarkMissing = role === 'admin' || isLoadLead
+
+  const handleMarkMissing = () => {
+    if (!scannedItem) return
+    const now = new Date()
+    const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`
+    if (scannedItem.status === 'missing') {
+      updateItemStatus(scannedItem.id, 'loaded')
+      addHistoryEntry(scannedItem.id, { action: 'Apareció — marcado como Cargado', userId: currentUser.id, time: timeStr })
+    } else {
+      updateItemStatus(scannedItem.id, 'missing')
+      addHistoryEntry(scannedItem.id, { action: 'Marcado como faltante', userId: currentUser.id, time: timeStr })
+    }
+    setScannedItemId(null)
+    setScanResult(null)
+  }
+
   const startCamera = async () => {
     setScanResult(null)
+    setScannedItemId(null)
     setCameraActive(true)
     // Wait for DOM to mount the div
     await new Promise(r => setTimeout(r, 100))
@@ -444,6 +465,27 @@ export default function Scan() {
               </div>
               <div style={styles.resultMsg}>{scanResult.message}</div>
             </div>
+          )}
+
+          {scanResult && !cameraActive && scannedItem && canMarkMissing && (
+            <button
+              className="fade-in"
+              style={{
+                width: '100%', maxWidth: 300, padding: '11px 0',
+                borderRadius: 'var(--radius)', marginBottom: 16, fontSize: 13, fontWeight: 700,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                ...(scannedItem.status === 'missing'
+                  ? { background: 'rgba(0,200,83,0.1)', border: '1px solid rgba(0,200,83,0.3)', color: 'var(--status-ok)' }
+                  : { background: 'rgba(255,171,0,0.1)', border: '1px solid rgba(255,171,0,0.3)', color: 'var(--accent-yellow)' }
+                ),
+              }}
+              onClick={handleMarkMissing}
+            >
+              {scannedItem.status === 'missing'
+                ? <><CheckCircle size={15} /> Marcar como Cargado</>
+                : <><AlertTriangle size={15} /> Marcar como Faltante</>
+              }
+            </button>
           )}
 
           {/* Truck selector — load-lead carga */}
