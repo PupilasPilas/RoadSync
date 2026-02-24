@@ -38,12 +38,14 @@ export function TrucksProvider({ children }) {
     return () => supabase.removeChannel(channel)
   }, [userId])
 
-  // Compute loaded count and progress from items
+  // Compute loaded/descargado counts and progress from items
   const trucks = rawTrucks.map(truck => {
     const truckItems = items.filter(i => i.truck === truck.id)
     const loaded = truckItems.filter(i => i.status === 'loaded').length
+    const descargado = truckItems.filter(i => i.status === 'descargado').length
     const progress = truck.capacity > 0 ? Math.round((loaded / truck.capacity) * 100) : 0
-    return { ...truck, loaded, progress }
+    const unloadProgress = truck.capacity > 0 ? Math.round((descargado / truck.capacity) * 100) : 0
+    return { ...truck, loaded, descargado, progress, unloadProgress }
   })
 
   const addTruck = async (truck) => {

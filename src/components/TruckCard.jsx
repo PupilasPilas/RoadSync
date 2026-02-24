@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Truck } from 'lucide-react'
 import ProgressBar from './ProgressBar'
+import { usePhase } from '../context/PhaseContext'
 
 const statusMap = {
   open: { label: 'Abierto', color: 'var(--status-pending)' },
@@ -51,7 +52,12 @@ const styles = {
 
 export default function TruckCard({ truck, compact = false }) {
   const navigate = useNavigate()
+  const { phase } = usePhase()
   const st = statusMap[truck.status]
+  const isDescarga = phase === 'Descarga'
+  const displayProgress = isDescarga ? truck.unloadProgress : truck.progress
+  const displayCount = isDescarga ? truck.descargado : truck.loaded
+  const countLabel = isDescarga ? 'descargados' : 'ítems'
 
   return (
     <div
@@ -69,10 +75,10 @@ export default function TruckCard({ truck, compact = false }) {
           <div style={styles.assign}>{truck.assignedTo}</div>
         </div>
       </div>
-      <ProgressBar progress={truck.progress} />
+      <ProgressBar progress={displayProgress} />
       <div style={styles.footer}>
         <span style={{ color: 'var(--text-muted)' }}>
-          {truck.loaded} de {truck.capacity} ítems
+          {displayCount} de {truck.capacity} {countLabel}
         </span>
         <span style={{
           fontSize: 11,
