@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { Hash, Layers, Clock, Edit2 } from 'lucide-react'
+import { Hash, Layers, Clock, Edit2, Truck } from 'lucide-react'
 import QRCodeLib from 'qrcode'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
@@ -9,6 +9,7 @@ import AnnotationsList from '../components/AnnotationsList'
 import { useAuth } from '../context/AuthContext'
 import { useItems } from '../context/ItemsContext'
 import { useUsers } from '../context/UsersContext'
+import { useTrucks } from '../context/TrucksContext'
 import { deptNames, deptColors } from '../data/mockData'
 
 const styles = {
@@ -192,6 +193,7 @@ export default function ItemDetail() {
   const { currentUser } = useAuth()
   const { items, itemHistory, updateItemStatus, addHistoryEntry } = useItems()
   const { users } = useUsers()
+  const { trucks } = useTrucks()
   const item = items.find(i => i.id === id)
   const role = currentUser?.role
 
@@ -246,10 +248,24 @@ export default function ItemDetail() {
             <span style={styles.infoLabel}>Departamento</span>
             <span style={{ ...styles.infoValue, color: deptColors[item.dept] }}>{deptNames[item.dept]}</span>
           </div>
-          <div style={{ ...styles.infoRow, borderBottom: 'none' }}>
+          <div style={styles.infoRow}>
             <Hash size={16} color="var(--text-muted)" />
             <span style={styles.infoLabel}>Tipo</span>
             <span style={styles.infoValue}>{item.type}</span>
+          </div>
+          <div style={{ ...styles.infoRow, borderBottom: 'none' }}>
+            <Truck size={16} color="var(--text-muted)" />
+            <span style={styles.infoLabel}>Camión</span>
+            <span style={{
+              ...styles.infoValue,
+              color: item.status === 'loaded' && item.truck
+                ? 'var(--status-ok)'
+                : 'var(--text-muted)',
+            }}>
+              {item.status === 'loaded' && item.truck
+                ? (trucks.find(t => t.id === item.truck)?.name ?? item.truck)
+                : '—'}
+            </span>
           </div>
         </div>
 
