@@ -110,7 +110,9 @@ export function AnnotationsProvider({ children }) {
 
   const deleteAnnotation = async (id) => {
     await supabase.from('annotations').delete().eq('id', id)
-    // Broadcast to all connected clients (including self)
+    // Optimistic update for self (broadcast doesn't fire for the sender)
+    setAnnotations(prev => removeById(prev, id))
+    // Broadcast to all other connected clients
     channelRef.current?.send({
       type: 'broadcast',
       event: 'annotation_deleted',
