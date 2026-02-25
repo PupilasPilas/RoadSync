@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { Hash, Layers, Clock, Edit2, Truck, X } from 'lucide-react'
+import { Hash, Layers, Clock, Edit2, Truck, AlertTriangle, CheckCircle, X } from 'lucide-react'
 import QRCodeLib from 'qrcode'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
@@ -280,6 +280,43 @@ export default function ItemDetail() {
           </div>
         </div>
 
+        {(role === 'admin' || role === 'load-lead') && (
+          <div className="fade-in" style={{ marginBottom: 16 }}>
+            {item.status !== 'missing' ? (
+              <button
+                style={{
+                  width: '100%', padding: '13px 0', borderRadius: 'var(--radius)',
+                  background: 'rgba(255,171,0,0.1)', border: '1px solid rgba(255,171,0,0.3)',
+                  color: 'var(--accent-yellow)', fontSize: 14, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+                onClick={() => {
+                  updateItemStatus(item.id, 'missing')
+                  addHistoryEntry(item.id, { action: 'Marcado como faltante', userId: currentUser.id, time: now() })
+                }}
+              >
+                <AlertTriangle size={16} />
+                Marcar como Faltante
+              </button>
+            ) : (
+              <button
+                style={{
+                  width: '100%', padding: '13px 0', borderRadius: 'var(--radius)',
+                  background: 'rgba(0,200,83,0.1)', border: '1px solid rgba(0,200,83,0.3)',
+                  color: 'var(--status-ok)', fontSize: 14, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+                onClick={() => {
+                  updateItemStatus(item.id, 'loaded')
+                  addHistoryEntry(item.id, { action: 'Apareció — marcado como Cargado', userId: currentUser.id, time: now() })
+                }}
+              >
+                <CheckCircle size={16} />
+                Marcar como Cargado
+              </button>
+            )}
+          </div>
+        )}
 
         <AnnotationsList type="item" entityId={item.id} />
 
