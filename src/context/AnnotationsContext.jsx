@@ -35,24 +35,30 @@ export function AnnotationsProvider({ children }) {
   const [annotations, setAnnotations] = useState({ item: {}, truck: {}, dept: {} })
   const channelRef = useRef(null)
 
+  const fetchAll = async () => {
+    const { data } = await supabase.from('annotations').select('*').order('created_at', { ascending: false })
+    if (!data) return
+    const grouped = { item: {}, truck: {}, dept: {} }
+    for (const row of data) {
+      if (!grouped[row.type]) grouped[row.type] = {}
+      if (!grouped[row.type][row.entity_id]) grouped[row.type][row.entity_id] = []
+      grouped[row.type][row.entity_id].push(mapAnnotation(row))
+    }
+    setAnnotations(grouped)
+  }
+
   useEffect(() => {
     if (!userId) {
       setAnnotations({ item: {}, truck: {}, dept: {} })
       return
     }
 
-    // Initial load of all annotations
-    supabase.from('annotations').select('*').order('created_at', { ascending: false })
-      .then(({ data }) => {
-        if (!data) return
-        const grouped = { item: {}, truck: {}, dept: {} }
-        for (const row of data) {
-          if (!grouped[row.type]) grouped[row.type] = {}
-          if (!grouped[row.type][row.entity_id]) grouped[row.type][row.entity_id] = []
-          grouped[row.type][row.entity_id].push(mapAnnotation(row))
-        }
-        setAnnotations(grouped)
-      })
+    fetchAll()
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') fetchAll()
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
 
     const channel = supabase
       .channel('annotations-realtime')
@@ -80,6 +86,7 @@ export function AnnotationsProvider({ children }) {
     return () => {
       supabase.removeChannel(channel)
       channelRef.current = null
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [userId])
 
