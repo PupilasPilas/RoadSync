@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from './AuthContext'
 
 const AnnotationsContext = createContext(null)
 
@@ -19,10 +20,16 @@ const mapAnnotation = (row) => ({
 })
 
 export function AnnotationsProvider({ children }) {
+  const { userId } = useAuth()
   // annotations[type][entityId] = [entries]
   const [annotations, setAnnotations] = useState({ item: {}, truck: {}, dept: {} })
 
   useEffect(() => {
+    if (!userId) {
+      setAnnotations({ item: {}, truck: {}, dept: {} })
+      return
+    }
+
     // Initial load of all annotations
     supabase.from('annotations').select('*').order('created_at', { ascending: false })
       .then(({ data }) => {
@@ -68,7 +75,7 @@ export function AnnotationsProvider({ children }) {
       .subscribe()
 
     return () => supabase.removeChannel(channel)
-  }, [])
+  }, [userId])
 
   const addAnnotation = async (type, entityId, text, user) => {
     const { data } = await supabase.from('annotations').insert({
