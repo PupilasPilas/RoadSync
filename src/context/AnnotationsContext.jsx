@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useRef, useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
 
@@ -19,10 +19,21 @@ const mapAnnotation = (row) => ({
   })(),
 })
 
+const removeById = (prev, id) => {
+  const next = { item: {}, truck: {}, dept: {} }
+  for (const type of Object.keys(prev)) {
+    next[type] = {}
+    for (const entityId of Object.keys(prev[type])) {
+      next[type][entityId] = prev[type][entityId].filter(a => a.id !== id)
+    }
+  }
+  return next
+}
+
 export function AnnotationsProvider({ children }) {
   const { userId } = useAuth()
-  // annotations[type][entityId] = [entries]
   const [annotations, setAnnotations] = useState({ item: {}, truck: {}, dept: {} })
+  const channelRef = useRef(null)
 
   useEffect(() => {
     if (!userId) {
@@ -59,22 +70,17 @@ export function AnnotationsProvider({ children }) {
           }
         })
       })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'annotations' }, (payload) => {
-        const { id } = payload.old
-        setAnnotations(prev => {
-          const next = { item: {}, truck: {}, dept: {} }
-          for (const type of Object.keys(prev)) {
-            next[type] = {}
-            for (const entityId of Object.keys(prev[type])) {
-              next[type][entityId] = prev[type][entityId].filter(a => a.id !== id)
-            }
-          }
-          return next
-        })
+      .on('broadcast', { event: 'annotation_deleted' }, ({ payload }) => {
+        setAnnotations(prev => removeById(prev, payload.id))
       })
       .subscribe()
 
-    return () => supabase.removeChannel(channel)
+    channelRef.current = channel
+
+    return () => {
+      supabase.removeChannel(channel)
+      channelRef.current = null
+    }
   }, [userId])
 
   const addAnnotation = async (type, entityId, text, user) => {
@@ -104,16 +110,11 @@ export function AnnotationsProvider({ children }) {
 
   const deleteAnnotation = async (id) => {
     await supabase.from('annotations').delete().eq('id', id)
-    // Optimistic update
-    setAnnotations(prev => {
-      const next = { item: {}, truck: {}, dept: {} }
-      for (const type of Object.keys(prev)) {
-        next[type] = {}
-        for (const entityId of Object.keys(prev[type])) {
-          next[type][entityId] = prev[type][entityId].filter(a => a.id !== id)
-        }
-      }
-      return next
+    // Broadcast to all connected clients (including self)
+    channelRef.current?.send({
+      type: 'broadcast',
+      event: 'annotation_deleted',
+      payload: { id },
     })
   }
 
