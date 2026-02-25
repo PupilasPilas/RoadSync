@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Search, Plus, Filter, X } from 'lucide-react'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
+import ItemCard from '../components/ItemCard'
 import { useAuth } from '../context/AuthContext'
 import { useItems } from '../context/ItemsContext'
 import { deptNames, deptColors } from '../data/mockData'
@@ -334,8 +335,6 @@ export default function Inventory() {
   const suggestions = search.length > 0
     ? items.filter(item => {
         if (isDeptLead && item.dept !== currentUser.dept) return false
-        if (deptFilter !== 'Todos' && item.dept !== deptFilterMap[deptFilter]) return false
-        if (statusFilter !== 'Todos' && item.status !== statusFilterMap[statusFilter]) return false
         return item.name.toLowerCase().includes(search.toLowerCase())
           || item.id.toLowerCase().includes(search.toLowerCase())
       }).slice(0, 6)
@@ -357,6 +356,14 @@ export default function Inventory() {
 
   const showFab = role === 'admin' || role === 'dept-lead'
   const showDeptFilters = role !== 'dept-lead'
+
+  const filtered = items.filter(item => {
+    if (isDeptLead && item.dept !== currentUser.dept) return false
+    if (search && !item.name.toLowerCase().includes(search.toLowerCase()) && !item.id.toLowerCase().includes(search.toLowerCase())) return false
+    if (deptFilter !== 'Todos' && item.dept !== deptFilterMap[deptFilter]) return false
+    if (statusFilter !== 'Todos' && item.status !== statusFilterMap[statusFilter]) return false
+    return true
+  })
 
   return (
     <>
@@ -449,6 +456,14 @@ export default function Inventory() {
             ))}
           </div>
         )}
+
+        <div style={styles.count}>{filtered.length} equipos</div>
+
+        <div style={styles.list}>
+          {filtered.map(item => (
+            <ItemCard key={item.id} item={item} />
+          ))}
+        </div>
 
         {showFab && (
           <button style={styles.fab} onClick={() => setShowModal(true)}>
