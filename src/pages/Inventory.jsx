@@ -1,12 +1,12 @@
-import { useState, useRef, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { Search, Plus, Filter, X } from 'lucide-react'
+import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
+import { Search, Plus, Filter } from 'lucide-react'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
 import ItemCard from '../components/ItemCard'
 import { useAuth } from '../context/AuthContext'
 import { useItems } from '../context/ItemsContext'
-import { deptNames, deptColors } from '../data/mockData'
+import { deptNames } from '../data/mockData'
 
 const typeIconMap = { case: 'Box', rack: 'Server', consola: 'Sliders', otro: 'Package' }
 const typeLabels = { case: 'Case', rack: 'Rack', consola: 'Consola', otro: 'Otro' }
@@ -34,6 +34,7 @@ const styles = {
     background: 'var(--surface)',
     borderRadius: 'var(--radius)',
     padding: '10px 14px',
+    marginBottom: 12,
     border: '1px solid var(--border)',
   },
   searchInput: {
@@ -81,50 +82,6 @@ const styles = {
     fontSize: 12,
     color: 'var(--text-muted)',
     marginBottom: 12,
-  },
-  searchWrap: {
-    position: 'relative',
-    marginBottom: 12,
-    zIndex: 10,
-  },
-  suggestions: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius)',
-    marginTop: 4,
-    zIndex: 100,
-    overflow: 'hidden',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-  },
-  suggestionItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    padding: '11px 14px',
-    cursor: 'pointer',
-    borderBottom: '1px solid var(--border)',
-    transition: 'background 0.1s',
-  },
-  suggestionName: {
-    fontSize: 14,
-    fontWeight: 500,
-    flex: 1,
-  },
-  suggestionId: {
-    fontSize: 12,
-    color: 'var(--text-muted)',
-    fontFamily: 'monospace',
-    letterSpacing: '0.5px',
-  },
-  deptDot: {
-    width: 8,
-    height: 8,
-    borderRadius: '50%',
-    flexShrink: 0,
   },
   overlay: {
     position: 'fixed',
@@ -321,38 +278,13 @@ export default function Inventory() {
   const { items, addItem } = useItems()
   const role = currentUser?.role
   const location = useLocation()
-  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState(location.state?.dept || 'Todos')
   const [statusFilter, setStatusFilter] = useState(location.state?.status || 'Todos')
   const [showFilters, setShowFilters] = useState(!!location.state?.status)
   const [showModal, setShowModal] = useState(false)
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const searchRef = useRef(null)
 
   const isDeptLead = role === 'dept-lead'
-
-  const suggestions = search.length > 0
-    ? items.filter(item => {
-        if (isDeptLead && item.dept !== currentUser.dept) return false
-        return item.name.toLowerCase().includes(search.toLowerCase())
-          || item.id.toLowerCase().includes(search.toLowerCase())
-      }).slice(0, 6)
-    : []
-
-  useEffect(() => {
-    const handleClick = (e) => {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setShowSuggestions(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    document.addEventListener('touchstart', handleClick)
-    return () => {
-      document.removeEventListener('mousedown', handleClick)
-      document.removeEventListener('touchstart', handleClick)
-    }
-  }, [])
 
   const showFab = role === 'admin' || role === 'dept-lead'
   const showDeptFilters = role !== 'dept-lead'
@@ -376,47 +308,14 @@ export default function Inventory() {
         }
       />
       <div className="page">
-        <div style={styles.searchWrap} className="fade-in" ref={searchRef}>
-          <div style={styles.searchBar}>
-            <Search size={18} color="var(--text-muted)" />
-            <input
-              style={styles.searchInput}
-              placeholder="Buscar equipo o código..."
-              value={search}
-              onChange={e => { setSearch(e.target.value); setShowSuggestions(true) }}
-              onFocus={() => setShowSuggestions(true)}
-            />
-            {search.length > 0 && (
-              <button onClick={() => { setSearch(''); setShowSuggestions(false) }}>
-                <X size={16} color="var(--text-muted)" />
-              </button>
-            )}
-          </div>
-          {showSuggestions && suggestions.length > 0 && (
-            <div style={styles.suggestions}>
-              {suggestions.map((item, i) => (
-                <div
-                  key={item.id}
-                  style={{
-                    ...styles.suggestionItem,
-                    borderBottom: i === suggestions.length - 1 ? 'none' : '1px solid var(--border)',
-                  }}
-                  onMouseDown={() => {
-                    setShowSuggestions(false)
-                    navigate(`/items/${item.id}`)
-                  }}
-                  onTouchEnd={() => {
-                    setShowSuggestions(false)
-                    navigate(`/items/${item.id}`)
-                  }}
-                >
-                  <div style={{ ...styles.deptDot, background: deptColors[item.dept] }} />
-                  <span style={styles.suggestionName}>{item.name}</span>
-                  <span style={styles.suggestionId}>{item.id}</span>
-                </div>
-              ))}
-            </div>
-          )}
+        <div style={styles.searchBar} className="fade-in">
+          <Search size={18} color="var(--text-muted)" />
+          <input
+            style={styles.searchInput}
+            placeholder="Buscar equipo o código..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
         </div>
 
         {showDeptFilters && (
