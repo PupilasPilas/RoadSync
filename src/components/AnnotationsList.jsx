@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MessageSquare, Send } from 'lucide-react'
+import { MessageSquare, Send, Trash2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useAnnotations } from '../context/AnnotationsContext'
 
@@ -103,7 +103,7 @@ const styles = {
 
 export default function AnnotationsList({ type, entityId }) {
   const { currentUser } = useAuth()
-  const { addAnnotation, getAnnotations } = useAnnotations()
+  const { addAnnotation, deleteAnnotation, getAnnotations } = useAnnotations()
   const [text, setText] = useState('')
 
   const notes = getAnnotations(type, entityId)
@@ -144,6 +144,14 @@ export default function AnnotationsList({ type, entityId }) {
                 {roleLabels[note.authorRole]}
               </span>
               <span style={styles.timestamp}>{note.timestamp}</span>
+              {(currentUser?.role === 'admin' || note.authorId === currentUser?.id) && (
+                <button
+                  onClick={() => deleteAnnotation(note.id)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', marginLeft: 4, color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+                >
+                  <Trash2 size={13} />
+                </button>
+              )}
             </div>
             <div style={styles.noteText}>{note.text}</div>
           </div>

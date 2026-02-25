@@ -7,6 +7,7 @@ const AnnotationsContext = createContext(null)
 const mapAnnotation = (row) => ({
   id: row.id,
   text: row.text,
+  authorId: row.author_id,
   authorName: row.author_name,
   authorRole: row.author_role,
   timestamp: (() => {
@@ -47,6 +48,19 @@ export function AnnotationsProvider({ children }) {
           },
         }))
       })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'annotations' }, (payload) => {
+        const row = payload.old
+        setAnnotations(prev => {
+          const list = prev[row.type]?.[row.entity_id] || []
+          return {
+            ...prev,
+            [row.type]: {
+              ...prev[row.type],
+              [row.entity_id]: list.filter(a => a.id !== row.id),
+            },
+          }
+        })
+      })
       .subscribe()
 
     return () => supabase.removeChannel(channel)
@@ -64,13 +78,18 @@ export function AnnotationsProvider({ children }) {
     // State is updated via realtime channel only
   }
 
+  const deleteAnnotation = async (id) => {
+    await supabase.from('annotations').delete().eq('id', id)
+    // State is updated via realtime channel only
+  }
+
   const getAnnotations = (type, entityId) =>
     annotations[type]?.[entityId] || []
 
   const resetAnnotations = () => setAnnotations({ item: {}, truck: {}, dept: {} })
 
   return (
-    <AnnotationsContext.Provider value={{ addAnnotation, getAnnotations, resetAnnotations }}>
+    <AnnotationsContext.Provider value={{ addAnnotation, deleteAnnotation, getAnnotations, resetAnnotations }}>
       {children}
     </AnnotationsContext.Provider>
   )
