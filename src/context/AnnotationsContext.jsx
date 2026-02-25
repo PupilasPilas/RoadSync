@@ -97,7 +97,17 @@ export function AnnotationsProvider({ children }) {
 
   const deleteAnnotation = async (id) => {
     await supabase.from('annotations').delete().eq('id', id)
-    // State is updated via realtime channel only
+    // Optimistic update
+    setAnnotations(prev => {
+      const next = { item: {}, truck: {}, dept: {} }
+      for (const type of Object.keys(prev)) {
+        next[type] = {}
+        for (const entityId of Object.keys(prev[type])) {
+          next[type][entityId] = prev[type][entityId].filter(a => a.id !== id)
+        }
+      }
+      return next
+    })
   }
 
   const getAnnotations = (type, entityId) =>
