@@ -85,6 +85,7 @@ const styles = {
   searchWrap: {
     position: 'relative',
     marginBottom: 12,
+    zIndex: 10,
   },
   suggestions: {
     position: 'absolute',
