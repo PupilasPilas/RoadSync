@@ -53,16 +53,16 @@ export function AnnotationsProvider({ children }) {
         })
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'annotations' }, (payload) => {
-        const row = payload.old
+        const { id } = payload.old
         setAnnotations(prev => {
-          const list = prev[row.type]?.[row.entity_id] || []
-          return {
-            ...prev,
-            [row.type]: {
-              ...prev[row.type],
-              [row.entity_id]: list.filter(a => a.id !== row.id),
-            },
+          const next = { item: {}, truck: {}, dept: {} }
+          for (const type of Object.keys(prev)) {
+            next[type] = {}
+            for (const entityId of Object.keys(prev[type])) {
+              next[type][entityId] = prev[type][entityId].filter(a => a.id !== id)
+            }
           }
+          return next
         })
       })
       .subscribe()
