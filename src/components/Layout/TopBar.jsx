@@ -72,7 +72,7 @@ const styles = {
   },
 }
 
-export default function TopBar({ title, showBack = false, actions }) {
+export default function TopBar({ title, showBack = false, onBack, actions }) {
   const navigate = useNavigate()
   const { currentUser, logout } = useAuth()
 
@@ -85,7 +85,7 @@ export default function TopBar({ title, showBack = false, actions }) {
     <div style={styles.bar}>
       <div style={styles.barInner}>
         {showBack && (
-          <button style={styles.backBtn} onClick={() => navigate(-1)}>
+          <button style={styles.backBtn} onClick={() => onBack ? onBack() : navigate(-1)}>
             <ChevronLeft size={22} />
           </button>
         )}

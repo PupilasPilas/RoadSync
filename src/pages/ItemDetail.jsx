@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { Hash, Layers, Clock, Edit2, Truck, AlertTriangle, CheckCircle, X } from 'lucide-react'
 import QRCodeLib from 'qrcode'
 import TopBar from '../components/Layout/TopBar'
@@ -190,6 +190,7 @@ function QRCode({ value }) {
 
 export default function ItemDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { currentUser } = useAuth()
   const { items, itemHistory, updateItemStatus, addHistoryEntry } = useItems()
   const { users } = useUsers()
@@ -228,6 +229,7 @@ export default function ItemDetail() {
       <TopBar
         title={item.id}
         showBack
+        onBack={() => navigate('/inventory', { state: { dept: deptNames[item.dept] } })}
         actions={canEdit ? (
           <button onClick={() => setShowEdit(true)}>
             <Edit2 size={18} color="var(--text-muted)" />
