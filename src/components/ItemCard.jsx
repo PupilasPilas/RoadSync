@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import * as Icons from 'lucide-react'
 import StatusBadge from './StatusBadge'
 import { deptColors, deptNames } from '../data/mockData'
@@ -53,13 +53,14 @@ const styles = {
 
 export default function ItemCard({ item }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const IconComponent = Icons[item.icon] || Icons.Box
   const deptColor = deptColors[item.dept]
 
   return (
     <div
       style={styles.card}
-      onClick={() => navigate(`/item/${item.id}`)}
+      onClick={() => navigate(`/item/${item.id}`, { state: { from: location.pathname, dept: deptNames[item.dept] } })}
       onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-hover)'}
       onMouseLeave={e => e.currentTarget.style.background = 'var(--surface)'}
     >
