@@ -40,13 +40,17 @@ export function AnnotationsProvider({ children }) {
       .channel('annotations-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'annotations' }, (payload) => {
         const row = payload.new
-        setAnnotations(prev => ({
-          ...prev,
-          [row.type]: {
-            ...prev[row.type],
-            [row.entity_id]: [mapAnnotation(row), ...(prev[row.type]?.[row.entity_id] || [])],
-          },
-        }))
+        setAnnotations(prev => {
+          const existing = prev[row.type]?.[row.entity_id] || []
+          if (existing.some(a => a.id === row.id)) return prev
+          return {
+            ...prev,
+            [row.type]: {
+              ...prev[row.type],
+              [row.entity_id]: [mapAnnotation(row), ...existing],
+            },
+          }
+        })
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'annotations' }, (payload) => {
         const row = payload.old
@@ -67,15 +71,28 @@ export function AnnotationsProvider({ children }) {
   }, [])
 
   const addAnnotation = async (type, entityId, text, user) => {
-    await supabase.from('annotations').insert({
+    const { data } = await supabase.from('annotations').insert({
       type,
       entity_id: entityId,
       text,
       author_id: user.id,
       author_name: user.name,
       author_role: user.role,
-    })
-    // State is updated via realtime channel only
+    }).select().single()
+    // Optimistic update so annotation appears immediately
+    if (data) {
+      setAnnotations(prev => {
+        const existing = prev[type]?.[entityId] || []
+        if (existing.some(a => a.id === data.id)) return prev
+        return {
+          ...prev,
+          [type]: {
+            ...prev[type],
+            [entityId]: [mapAnnotation(data), ...existing],
+          },
+        }
+      })
+    }
   }
 
   const deleteAnnotation = async (id) => {
