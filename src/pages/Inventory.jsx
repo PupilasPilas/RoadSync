@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Search, Plus, Filter } from 'lucide-react'
+import { Search, Plus, Filter, X } from 'lucide-react'
 import TopBar from '../components/Layout/TopBar'
 import BottomNav from '../components/Layout/BottomNav'
 import ItemCard from '../components/ItemCard'
