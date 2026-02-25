@@ -79,13 +79,6 @@ export function ItemsProvider({ children }) {
   }
 
   const addHistoryEntry = async (itemId, entry) => {
-    // Optimistic update (realtime will also fire but deduplication is fine)
-    const now = new Date()
-    const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`
-    setItemHistory(prev => ({
-      ...prev,
-      [itemId]: [{ action: entry.action, userId: entry.userId, time: timeStr }, ...(prev[itemId] || [])],
-    }))
     await supabase.from('item_history').insert({
       item_id: itemId,
       action: entry.action,
