@@ -53,24 +53,15 @@ export function AnnotationsProvider({ children }) {
   }, [])
 
   const addAnnotation = async (type, entityId, text, user) => {
-    const { data } = await supabase.from('annotations').insert({
+    await supabase.from('annotations').insert({
       type,
       entity_id: entityId,
       text,
       author_id: user.id,
       author_name: user.name,
       author_role: user.role,
-    }).select().single()
-    // Realtime will update state; optimistic fallback if realtime is slow
-    if (data) {
-      setAnnotations(prev => ({
-        ...prev,
-        [type]: {
-          ...prev[type],
-          [entityId]: [mapAnnotation(data), ...(prev[type]?.[entityId] || [])],
-        },
-      }))
-    }
+    })
+    // State is updated via realtime channel only
   }
 
   const getAnnotations = (type, entityId) =>
